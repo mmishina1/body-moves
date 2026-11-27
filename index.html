@@ -239,6 +239,7 @@ body.tour #caption, body.tour #route { opacity: 0 !important; pointer-events: no
 #tourbar .count { font-size: 11px; letter-spacing: .1em; color: #b9b1a5; white-space: nowrap; }
 #tourbar .note { margin: 0; font: 400 15px/1.5 "Libre Franklin", var(--font-sans); color: var(--chalk); text-wrap: pretty; }
 #tourbar .note:empty { display: none; }
+#tourbar .note .wt { display: block; font-weight: 600; margin-bottom: 3px; }
 #tourbar .look { color: #d8cfc2; margin-left: auto; }
 #tourResume { position: fixed; z-index: 7; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
   background: rgba(18,17,15,.72); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: var(--chalk);
@@ -1382,7 +1383,8 @@ const cableH = CEIL - TRACK_Y, cableGeo = new THREE.CylinderGeometry(0.003, 0.00
   const paired = w.photos.some(p => p.pair), order = paired ? SLOT_ORDER_PAIRED : SLOT_ORDER;
   const LL = LINE_HANG.halls.includes(w.hall) ? lineLayout(w) : null;
   wall.leadX = LL && LL[0] ? LL[0].x : null;
-  wall.details = LL ? w.photos.map((p, k) => p.context ? { k, x: LL[k].x, era: p.era } : null).filter(Boolean) : [];   /* works with a story get their own close look */   /* where the lead work hangs: a narrow screen looks straight at it */
+  /* every work gets a close look (the guided tour walks along the line, left to right); works with a story keep their era */
+  wall.details = LL ? w.photos.map((p, k) => LL[k] ? { k, x: LL[k].x, y: LL[k].y, sw: LL[k].sw, sh: LL[k].sh, era: p.era, ctx: !!p.context } : null).filter(Boolean).sort((a, b) => a.x - b.x) : [];   /* works with a story get their own close look */   /* where the lead work hangs: a narrow screen looks straight at it */
   let next = 0;
   w.photos.forEach((p, k) => {
 let slot = p.pair ? -1 : order[next++];
@@ -1988,7 +1990,15 @@ function buildStops() {
       stops.push({ kind: "text", wall: w.index, hall: hi, bay: w.index, pos: wallPoint(w, w.textCX != null ? w.textCX : TEXT_X, EYE, tStand), yaw: face, pitch: Math.atan2((w.textCY || 2.75) - EYE, tStand) });
       worksStopOf[w.index] = stops.length;
       stops.push({ kind: "works", wall: w.index, hall: hi, bay: w.index, pos: wallPoint(w, innerWidth < innerHeight && w.leadX != null ? w.leadX : WORKS_X, EYE, WORKS_STAND), yaw: face, pitch: Math.atan2((innerWidth < innerHeight ? 1.85 : WORKS_LOOK) - EYE, WORKS_STAND) });
-      (w.details || []).forEach(d => { const ds = innerWidth < innerHeight ? 5.4 : 5.8; d.stop = stops.length; stops.push({ kind: "detail", wall: w.index, hall: hi, bay: w.index, era: d.era, pos: wallPoint(w, d.x, EYE, ds), yaw: face, pitch: Math.atan2((innerWidth < innerHeight ? 1.7 : 1.95) - EYE, ds) }); });   /* on a phone the tour bar covers the lower screen, so the work sits a little higher */
+      (w.details || []).forEach(d => {
+        /* stand back far enough to see the whole work with its plaque; a phone needs more room for the width */
+        const tall = innerWidth < innerHeight;
+        let ds = THREE.MathUtils.clamp(d.sh * 1.7 + 1.3, 3.4, 6.4);
+        if (tall) ds = THREE.MathUtils.clamp(Math.max(ds * 1.15, d.sw * 2.9 + 1.2), 4.2, 8.2);
+        const lookY = d.y - d.sh * (tall ? 0.32 : 0.18);   /* aim a little low, so the work sits above the tour bar */
+        d.stop = stops.length;
+        stops.push({ kind: "detail", wall: w.index, hall: hi, bay: w.index, k: d.k, era: d.era, ctx: d.ctx, pos: wallPoint(w, d.x, EYE, ds), yaw: face, pitch: Math.atan2(lookY - EYE, ds) });
+      });   /* on a phone the tour bar covers the lower screen, so the work sits a little higher */
 INTERLUDES.forEach((it, idx) => {
   if (it.hall !== hi || Math.abs(it.at - BAY * (w.inHall + 0.5)) > 1) return;
   const n = it.photos.length, STAND0 = THREE.MathUtils.clamp((n * (n > 3 ? 2.4 : 2.6) + 0.8) / 1.6, 5.0, 8.0), STAND = innerWidth < innerHeight && n > 1 ? Math.min(9.3, STAND0 * 1.8) : STAND0;
@@ -2135,7 +2145,15 @@ function buildTour() {
     }
     tour.steps.push({ stop: textStopOf[c], c, kind: "text", note: w.hook });
     tour.steps.push({ stop: worksStopOf[c], c, kind: "works", note: CURATOR.walls[w.name] || "" });
-    w.photos.forEach((p, k) => { if (!p.context) return; const d = (w.details || []).find(x => x.k === k); tour.steps.push({ stop: d && d.stop != null ? d.stop : worksStopOf[c], c, kind: "context", era: p.era || p.context.title, note: p.context.text }); });
+    /* then along the line, work by work, left to right: its title and the description from its plaque;
+       a work with a story gets one more stop for it */
+    const ds = w.details || [];
+    ds.forEach((d, n) => {
+      const p = w.photos[d.k];
+      tour.steps.push({ stop: d.stop, c, k: d.k, kind: "work", n: n + 1, of: ds.length, title: p.title, note: p.desc });
+      if (p.context) tour.steps.push({ stop: d.stop, c, k: d.k, kind: "context", era: p.era || p.context.title, note: p.context.text });
+    });
+    if (!ds.length) w.photos.forEach((p, k) => { if (p.context) tour.steps.push({ stop: worksStopOf[c], c, kind: "context", era: p.era || p.context.title, note: p.context.text }); });
     if (CURATOR.pairs[w.name]) {
       const ps = stops.findIndex(st => st.kind === "inter" && st.bay === c && INTERLUDES[st.inter].pairOf === w.name);
       tour.steps.push({ stop: ps >= 0 ? ps : worksStopOf[c], c, kind: "pair", note: CURATOR.pairs[w.name] });
@@ -2165,14 +2183,18 @@ function updateTourBar() {
   else if (st.kind === "exit") where = `<b>End of the visit</b>`;
   else {
     const w = walls[st.c], lab = PAIR_LABELS[w.name];
-    const part = st.kind === "text" ? "the text" : st.kind === "works" ? "the lead work" : st.kind === "pair" ? (lab ? lab.join(" → ").toLowerCase() : "then and now") : st.kind === "context" ? st.era.toLowerCase() : "between the collections";
+    const part = st.kind === "text" ? "the text" : st.kind === "works" ? "the lead work" : st.kind === "work" ? `work ${st.n} of ${st.of}` : st.kind === "pair" ? (lab ? lab.join(" → ").toLowerCase() : "then and now") : st.kind === "context" ? st.era.toLowerCase() : "between the collections";
     where = `${esc(HALLS[w.hall].name)} · <b>${esc(w.name)}</b> · ${esc(part)}`;
   }
   tourWhere.innerHTML = where;
   document.getElementById("tourCount").textContent = `${tour.i + 1} / ${tour.steps.length}`;
-  document.getElementById("tourNote").textContent = st.note || "";
+  const noteEl = document.getElementById("tourNote");
+  if (st.kind === "work") noteEl.innerHTML = `<span class="wt">${esc(st.title)}</span>${esc(st.note || "")}`;
+  else noteEl.textContent = st.note || "";
   tourBack.disabled = tour.i === 0;
-  document.getElementById("tourRead").hidden = !(st.kind === "text" || st.kind === "about");
+  const readBtn = document.getElementById("tourRead");
+  readBtn.hidden = !(st.kind === "text" || st.kind === "about" || st.kind === "work");
+  readBtn.textContent = st.kind === "work" ? "See it large" : "Read the text";
   tourNext.textContent = last ? "Finish the tour" : "Continue →";
 }
 function startTour() {
@@ -2194,7 +2216,7 @@ tourNext.addEventListener("click", tourNextStep);
 tourBack.addEventListener("click", () => tourGo(tour.i - 1));
 document.getElementById("tourLeave").addEventListener("click", leaveTour);
 /* the wall text, set large in the side panel, for anyone who would rather read it close up */
-document.getElementById("tourRead").addEventListener("click", () => { const st = tour.steps[tour.i]; if (st.kind === "about") openAbout(); else if (st.c !== undefined) openText(st.c); });
+document.getElementById("tourRead").addEventListener("click", () => { const st = tour.steps[tour.i]; if (st.kind === "about") openAbout(); else if (st.kind === "work") focusPhoto(st.c, st.k); else if (st.c !== undefined) openText(st.c); });
 /* switching from the free visit to the guided tour at any time: it picks up at the stop nearest to the visitor */
 document.getElementById("tourTop").addEventListener("click", () => {
   if (!document.body.classList.contains("inside")) return;
@@ -2216,7 +2238,10 @@ tourResume.addEventListener("click", () => {
   tour.paused = false; tourResume.hidden = true; tourbar.hidden = false;
   document.body.classList.add("tour"); closePanel(); tourGo(tour.i);
 });
-function step(d) { goToStop((mode === "free" ? nearestStop() : Math.round(routeTarget)) + d); }
+/* the arrows of the free visit skip the work-by-work stops (they belong to the guided tour), but keep the ones with a story */
+const tourOnly = st => st && st.kind === "detail" && !st.ctx;
+function skipTo(n, d) { while (n > 0 && n < LAST() && tourOnly(stops[n])) n += d; return n; }
+function step(d) { goToStop(skipTo((mode === "free" ? nearestStop() : Math.round(routeTarget)) + d, d)); }
 function collectionStart(c) { goToStop(textStopOf[c]); }
 const lb = document.getElementById("lightbox"), lbImg = document.getElementById("lbImg");
 let lbAt = null;
@@ -2356,12 +2381,12 @@ function updateUI() {
       const pos = `${hallLabel(w.hall)} · ${w.inHall + 1} of ${h.items.length}`;
       const nextW = walls[s.wall + 1];
       const nextLabel = !nextW ? "Exit →" : nextW.hall !== w.hall ? `Next hall: ${HALLS[nextW.hall].name} →` : `Next: ${nextW.name} →`;
-      const nxs = stops[si + 1], turnLabel = nxs && nxs.kind === "inter" ? (INTERLUDES[nxs.inter].pairOf ? `Turn around: ${(PAIR_LABELS[INTERLUDES[nxs.inter].pairOf] || ["then and now"])[0].toLowerCase()} →` : "Turn around: more works →") : null;
+      const nsi = skipTo(si + 1, 1), nxs = stops[nsi], turnLabel = nxs && nxs.kind === "inter" ? (INTERLUDES[nxs.inter].pairOf ? `Turn around: ${(PAIR_LABELS[INTERLUDES[nxs.inter].pairOf] || ["then and now"])[0].toLowerCase()} →` : "Turn around: more works →") : null;
       const look = nxs && nxs.kind === "detail" ? `Look closer: ${nxs.era.toLowerCase()} →` : null;
       if (s.kind === "detail") {
-        setCaption(`${pos} · ${esc(w.name)}`, esc(s.era), [
+        setCaption(`${pos} · ${esc(w.name)}`, esc(s.era || w.photos[s.k].title), [
           ["Back to the collection", () => { closePanel(); goToStop(worksStopOf[w.index]); }],
-          [turnLabel || nextLabel, () => { closePanel(); goToStop(si + 1); }]
+          [turnLabel || nextLabel, () => { closePanel(); goToStop(nsi); }]
         ]);
       } else if (s.kind === "text") {
         setCaption(pos, esc(w.name), [
@@ -2371,7 +2396,7 @@ function updateUI() {
       } else {
         setCaption(`${pos} · ${w.photos.length} works`, esc(w.name), [
           ["Back to the text", () => { goToStop(textStopOf[w.index]); openText(w.index); }],
-          [look || turnLabel || nextLabel, () => { closePanel(); goToStop(si + 1); }]
+          [look || turnLabel || nextLabel, () => { closePanel(); goToStop(nsi); }]
         ]);
       }
     }
