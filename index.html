@@ -188,6 +188,23 @@ button:focus-visible { outline: 2px solid var(--lamp); outline-offset: 2px; }
   #caption { bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
 }
 
+/* touch devices: a joystick to walk (left thumb), drag anywhere else to look (right thumb) */
+#joy { position: fixed; z-index: 5; left: max(20px, env(safe-area-inset-left, 0px)); bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  width: 116px; height: 116px; border-radius: 50%; border: 1px solid rgba(243,238,230,.4); background: rgba(18,16,14,.3);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); touch-action: none; display: none; }
+#joy .knob { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%;
+  background: rgba(246,242,235,.88); box-shadow: 0 2px 10px rgba(0,0,0,.25); pointer-events: none; }
+#joy .ar { position: absolute; color: rgba(243,238,230,.75); font-size: 10px; line-height: 1; pointer-events: none; }
+#joy .ar.u { top: 8px; left: 50%; transform: translateX(-50%); } #joy .ar.d { bottom: 8px; left: 50%; transform: translateX(-50%); }
+#joy .ar.l { left: 9px; top: 50%; transform: translateY(-50%); } #joy .ar.r { right: 9px; top: 50%; transform: translateY(-50%); }
+body.touch.inside.walkable #joy { display: block; }
+body.touch #route .hint { display: none; }
+body.touch #caption { bottom: calc(232px + env(safe-area-inset-bottom, 0px)); }
+@media (min-width: 761px) {
+  body.touch #joy { bottom: calc(30px + env(safe-area-inset-bottom, 0px)); left: max(28px, env(safe-area-inset-left, 0px)); width: 132px; height: 132px; }
+  body.touch #caption { bottom: calc(184px + env(safe-area-inset-bottom, 0px)); }
+}
+
 /* entrance: the museum itself is the opening; one restrained button stands in front of the doorway */
 #entry { position: fixed; z-index: 10; left: 50%; top: 80%; transform: translate(-50%, -50%); transition: opacity .7s ease; }
 #entry.gone { opacity: 0; pointer-events: none; }
@@ -284,6 +301,7 @@ body.inside #top, body.inside #caption, body.inside #route { opacity: 1; pointer
   <div class="acts fade" id="capActs"></div>
 </div>
 
+<div id="joy" aria-hidden="true"><span class="ar u">▲</span><span class="ar d">▼</span><span class="ar l">◀</span><span class="ar r">▶</span><span class="knob"></span></div>
 <div id="route" class="chrome">
   <div class="hint" id="hint">Drag to look around · Scroll or W A S D to walk<br>Click a work to see it large</div>
   <div class="row">
@@ -2019,7 +2037,7 @@ function stopIndex() { return Math.round(clampP(routeTarget)); }
 /* Free walking: drag to look, scroll or W A S D to walk, with walls you can't pass through.
    The arrows and the collection buttons still take you from stop to stop: from wherever you are,
    the camera first glides to the nearest stop, then follows the route. */
-const vel = new THREE.Vector3(), keys = new Set();
+const vel = new THREE.Vector3(), keys = new Set(), joyMove = { fw: 0, sd: 0 };
 let yawT = 0, pitchT = 0, glideThen = 0, lastNow = 0;
 const WALK = 2.4, MARGIN = 0.55;
 const colRay = new THREE.Raycaster(), colO = new THREE.Vector3(), colD = new THREE.Vector3();
@@ -2046,6 +2064,7 @@ function freeStep(dt) {
   if (keys.has("s") || keys.has("arrowdown")) fw -= 1;
   if (keys.has("d")) sd += 1;
   if (keys.has("a")) sd -= 1;
+  fw = Math.max(-1, Math.min(1, fw + joyMove.fw)); sd = Math.max(-1, Math.min(1, sd + joyMove.sd));
   const k = 1 - Math.exp(-dt * (fw || sd ? 6 : 3.2));
   vel.x += ((fx * fw + rx * sd) * WALK - vel.x) * k;
   vel.z += ((fz * fw + rz * sd) * WALK - vel.z) * k;
@@ -2485,6 +2504,33 @@ addEventListener("keydown", e => {
   else if (e.key === "Escape") closePanel();
 });
 
+/* ---------------- touch joystick: walk like W A S D ---------------- */
+const IS_TOUCH = (navigator.maxTouchPoints || 0) > 0 || matchMedia("(pointer: coarse)").matches;
+if (IS_TOUCH) document.body.classList.add("touch");
+(() => {
+  const joy = document.getElementById("joy"), knob = joy.querySelector(".knob");
+  let id = null;
+  function move(e) {
+    const r = joy.getBoundingClientRect(), R = r.width / 2 - 14;
+    let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    const len = Math.hypot(dx, dy); if (len > R) { dx *= R / len; dy *= R / len; }
+    knob.style.transform = `translate(${dx}px, ${dy}px)`;
+    const fx = dx / R, fy = -dy / R;
+    joyMove.sd = Math.abs(fx) < 0.15 ? 0 : fx * 0.75;
+    joyMove.fw = Math.abs(fy) < 0.15 ? 0 : fy;
+  }
+  function end() { id = null; joyMove.fw = joyMove.sd = 0; knob.style.transform = ""; }
+  joy.addEventListener("pointerdown", e => { e.preventDefault(); e.stopPropagation(); id = e.pointerId; try { joy.setPointerCapture(id); } catch (_) {} beginFree(); move(e); });
+  joy.addEventListener("pointermove", e => { if (e.pointerId === id) move(e); });
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach(ev => joy.addEventListener(ev, e => { if (e.pointerId === id) end(); }));
+  /* the pad shows only while walking is possible: inside, no running tour, no open work */
+  setInterval(() => {
+    const ok = document.body.classList.contains("inside") && !(tour.on && !tour.paused) && lb.hidden && mode !== "enter" && mode !== "walkin";
+    document.body.classList.toggle("walkable", ok);
+    if (!ok && id !== null) end();
+  }, 200);
+})();
+
 /* floor plan on request: the U of three halls and two rotundas, where you stand, which way you face */
 const planSvg = document.getElementById("planSvg");
 planSvg.setAttribute("viewBox", "0 0 92 120");
@@ -2683,7 +2729,7 @@ function startEntry() {
 const howto = document.getElementById("howto");
 let howtoTimer = 0;
 function showHowto() {
-  if (matchMedia("(pointer: coarse)").matches) howto.querySelector("ul").innerHTML = "<li><b>Drag</b> to look around</li><li><b>Tap a work</b> to see it large</li><li><b>← →</b> to walk from stop to stop</li>";
+  if (document.body.classList.contains("touch")) howto.querySelector("ul").innerHTML = "<li><b>Joystick</b> (bottom left) to walk</li><li><b>Drag</b> anywhere else to look around</li><li><b>Tap a work</b> to see it large</li><li><b>← →</b> to jump from stop to stop</li>";
   howto.hidden = false; requestAnimationFrame(() => howto.classList.add("show"));
   howtoTimer = setTimeout(hideHowto, 6000);
   ["pointerdown", "wheel", "keydown"].forEach(ev => addEventListener(ev, hideHowto, { once: true, passive: true }));
