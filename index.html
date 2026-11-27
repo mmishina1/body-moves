@@ -1110,7 +1110,7 @@ function harvestLights() {
   staticRects.forEach(e => {
     const L = e.light; scene.remove(L);
     if (L.isRectAreaLight) RECTS.push({ pos: L.position.clone(), quat: L.quaternion.clone(), width: L.width, height: L.height, color: L.color.clone(), power: e.power, hall: e.hall, light: null });
-    else { scene.remove(L.target); SPOTS.push({ pos: L.position.clone(), target: L.target.position.clone(), angle: L.angle, penumbra: L.penumbra, power: e.power, light: null }); }
+    else { scene.remove(L.target); SPOTS.push({ pos: L.position.clone(), target: L.target.position.clone(), angle: L.angle, penumbra: L.penumbra, power: e.power, beamK: e.beamK, light: null }); }
   });
   staticRects.length = 0;
   SPOTS.concat(RECTS).forEach(e => { if (!e.wall) e.foyer = !e.hall && inFoyer(e.pos); });
@@ -2036,15 +2036,25 @@ if (last) {
     { text: "You knew the feeling.", font: `400 74px ${SANS}`, size: 74, gap: 44, color: "#efe8dc" },
     { text: "Now you know why.", font: `400 74px ${SANS}`, size: 74, gap: 14, color: "#efe8dc" },
     { text: "Sources and image credits are in the catalogue.", font: `300 40px ${SERIF}`, size: 40, gap: 50, color: "#b9b1a5" }
-  ], 5.6, 2.2);
+  ], 2.5, 1.0);   /* sized to the text itself, so the block sits centred in the pool of light */
   sign.position.set(x1 - 0.01, 2.4, DEPTH / 2); sign.rotation.y = -Math.PI / 2; g.add(sign);
   sign.userData = { type: "sources" }; clickables.push(sign);
   g.updateMatrixWorld(true);
-  /* one narrow spotlight on the words from the dark ceiling */
-  const L = new THREE.SpotLight(LAMP, 0, 0, 0.42, 0.85, 1);
-  L.position.copy(g.localToWorld(new THREE.Vector3(x1 - 2.4, CEIL - 0.2, DEPTH / 2)));
-  L.target.position.copy(g.localToWorld(new THREE.Vector3(x1, 2.4, DEPTH / 2)));
-  scene.add(L, L.target); staticRects.push({ light: L, power: 0.9 });
+  /* one spotlight on the words from a real fitting on the dark ceiling: a black can on a short stem,
+     set back from the wall so the pool is soft and even over the whole text, with only a faint beam in the air */
+  const lampAt = g.localToWorld(new THREE.Vector3(x1 - 3.1, CEIL - 0.32, DEPTH / 2));
+  const aimAt = g.localToWorld(new THREE.Vector3(x1, 2.45, DEPTH / 2));
+  const L = new THREE.SpotLight(LAMP, 0, 0, 0.36, 1.0, 1);
+  L.position.copy(lampAt); L.target.position.copy(aimAt);
+  scene.add(L, L.target); staticRects.push({ light: L, power: 1.0, beamK: 0.35 });
+  const fit = new THREE.Group(); fit.position.copy(lampAt); scene.add(fit);
+  const dirF = aimAt.clone().sub(lampAt).normalize();
+  const can = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 0.2, 24), lampBlack);
+  can.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dirF.clone().negate()); can.position.addScaledVector(dirF, -0.06); fit.add(can);
+  const lensF = new THREE.Mesh(new THREE.CircleGeometry(0.05, 24), new THREE.MeshBasicMaterial({ color: 0xffe3bf, toneMapped: false }));
+  lensF.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dirF); lensF.position.addScaledVector(dirF, 0.041); fit.add(lensF);
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.3, 8), lampBlack); stem.position.y = 0.17; fit.add(stem);
+  const rose = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.014, 20), lampBlack); rose.position.y = 0.315; fit.add(rose);
 }
   });
 
@@ -2144,7 +2154,7 @@ ambient.intensity = mix(LIGHT.ambient, house.level) * fill;
     if (!sp.light) { if (sp.beam) sp.beam.uniforms.uStrength.value *= 0.9; return; }
     const on = sp.wall ? sp.wall.lv : sp.foyer ? 1 : hallLights.lv;
     sp.fade += (1 - sp.fade) * fk; sp.light.intensity = sp.power * on * accent * sp.fade;
-    if (sp.beam) sp.beam.uniforms.uStrength.value = 0.075 * sp.fade * on * (sp.power / LIGHT.spot);
+    if (sp.beam) sp.beam.uniforms.uStrength.value = 0.075 * sp.fade * on * (sp.power / LIGHT.spot) * (sp.beamK != null ? sp.beamK : 1);
   });
   RECTS.forEach(r => { if (!r.light) return; r.fade += (1 - r.fade) * fk; r.light.intensity = r.power * (r.wall ? r.wall.lv : r.foyer ? 1 : hallLights.lv) * accent * r.fade; });
 }
