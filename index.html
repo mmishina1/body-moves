@@ -4,7 +4,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&family=Libre+Franklin:wght@400;500;600&family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,300;1,6..72,400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700&family=Caveat:wght@500&family=Libre+Franklin:wght@400;500;600&family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,300;1,6..72,400&display=swap">
 <style>
 @font-face { font-family: "Editorial New"; src: url("fonts/PPEditorialNew-Regular.otf") format("opentype"); font-weight: 400; font-style: normal; font-display: block; }
 /* Layout: one full-screen 3D gallery room; paper-coloured editorial panels (entrance, reading panel) and a slim dark bar float over it. */
@@ -53,6 +53,17 @@ body { background: var(--night); color: var(--chalk); font-family: var(--font-bo
 #tourTop, #soundBtn { height: 34px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: rgba(18,16,14,.35); color: var(--chalk); font: 500 13px/1 "Libre Franklin", var(--font-sans); letter-spacing: .01em; }
 #tourTop:hover, #tourTop:focus-visible, #soundBtn:hover, #soundBtn:focus-visible { border-color: var(--chalk); }
 #soundBtn[aria-pressed="false"] { color: #b9b1a5; }
+.photoWrap { position: relative; display: inline-flex; }
+#photoBtn { width: 34px; height: 34px; padding: 0; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: rgba(18,16,14,.35); color: var(--chalk); cursor: pointer; }
+#photoBtn svg { width: 18px; height: 18px; }
+#photoBtn:hover, #photoBtn:focus-visible { border-color: var(--chalk); }
+#photoHint { position: absolute; top: calc(100% + 10px); right: -6px; white-space: nowrap; padding: 7px 12px; border-radius: 8px; background: rgba(14,13,12,.82); color: var(--chalk); font: 500 12px/1 "Libre Franklin", var(--font-sans); letter-spacing: .02em; opacity: 0; transform: translateY(-4px); transition: opacity .4s, transform .4s; pointer-events: none; }
+#photoHint::before { content: ""; position: absolute; top: -5px; right: 18px; border: 5px solid transparent; border-top: 0; border-bottom-color: rgba(14,13,12,.82); }
+#photoHint.show { opacity: 1; transform: none; }
+#flash { position: fixed; inset: 0; z-index: 41; background: #fff; opacity: 0; pointer-events: none; }
+#flash.go { animation: shot .45s ease-out; }
+@keyframes shot { 0% { opacity: 0; } 12% { opacity: .85; } 100% { opacity: 0; } }
+
 body.tour #tourTop { display: none; }
 /* visitor's pulse, like a fitness watch: it rises through the workout and settles after it */
 #pulse { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px 0 11px; border: 1px solid var(--line); border-radius: 999px;
@@ -196,7 +207,12 @@ button:focus-visible { outline: 2px solid var(--lamp); outline-offset: 2px; }
 #joy .knob { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%;
   background: rgba(243,238,230,.85); pointer-events: none; transition: transform .12s ease-out; }
 #joy.active .knob { transition: none; }
-body.touch.inside.walkable #joy { display: block; }
+body.inside.walkable #joy { display: block; }
+body:not(.touch) #joy { bottom: 30px; left: 28px; width: 116px; height: 116px; cursor: grab; }
+body:not(.touch) #joy.active { cursor: grabbing; }
+body:not(.touch) #joy:hover { border-color: rgba(243,238,230,.75); }
+body:not(.touch).walkable #caption { bottom: 168px; }
+#caption { transition: bottom .3s ease; }
 body.touch #route .hint { display: none; }
 body.touch #caption { bottom: calc(232px + env(safe-area-inset-bottom, 0px)); }
 @media (min-width: 761px) {
@@ -227,6 +243,42 @@ body.touch #caption { bottom: calc(232px + env(safe-area-inset-bottom, 0px)); }
 #kiosk .note { font-size: 12px; line-height: 1.55; color: #9fa6b4; margin: 8px 0 0; max-width: 80ch; }
 #kiosk .close { position: absolute; top: 14px; right: 14px; width: 40px; height: 40px; padding: 0; border-radius: 50%; display: grid; place-items: center; font: 300 24px/1 var(--font-sans); color: #efe8dc; border-color: rgba(255,255,255,.25); background: transparent; }
 @media (max-width: 640px) { #kiosk .scr { padding: 20px 14px 16px; } #kiosk .cols { gap: 8px; grid-template-columns: 1fr; } #kiosk .col { padding: 8px 6px; } #kiosk .lead { font-size: 14px; } }
+/* guestbook: an open book, notes on the left page, the visitor's own page on the right */
+#guest { position: fixed; inset: 0; z-index: 28; display: grid; place-items: center; background: rgba(10,9,8,.86); opacity: 0; transition: opacity .3s ease; padding: 16px; box-sizing: border-box; }
+#guest[hidden] { display: none; }
+#guest.open { opacity: 1; }
+#guest .book { position: relative; width: min(1000px, 100%); max-height: 100%; display: grid; grid-template-columns: 1fr 1fr; background: #f7f5f0; border-radius: 4px; box-shadow: 0 0 0 9px #26272a, 0 30px 90px rgba(0,0,0,.6); color: #1d1d1f; overflow: hidden; }
+#guest .book::after { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 120px; margin-left: -60px; pointer-events: none; background: linear-gradient(90deg, transparent, rgba(60,50,40,.07) 40%, rgba(60,50,40,.16) 50%, rgba(60,50,40,.07) 60%, transparent); }
+#guest .page { padding: 36px 42px 30px; overflow: auto; max-height: calc(100dvh - 52px); box-sizing: border-box; }
+#guest h2 { font: 700 44px/1 'Barlow Condensed', 'Arial Narrow', sans-serif; letter-spacing: .02em; text-transform: uppercase; margin: 0 0 8px; }
+#guest .sub { font: 500 12px/1.4 "Libre Franklin", sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #8b857c; margin: 0 0 20px; }
+#guest ol { list-style: none; margin: 0; padding: 0; }
+#guest li { padding: 14px 0 16px; border-bottom: 1px solid rgba(29,29,31,.1); }
+#guest li .t { font: 400 16px/1.55 "Instrument Sans", sans-serif; white-space: pre-wrap; overflow-wrap: anywhere; }
+#guest li .by { font: 500 11px/1.4 "Libre Franklin", sans-serif; color: #8b857c; margin-top: 8px; letter-spacing: .1em; text-transform: uppercase; }
+#guest li.empty { font: 400 16px/1.5 "Instrument Sans", sans-serif; color: #8b857c; border: 0; }
+#guest label { display: block; font: 600 11px/1.4 "Libre Franklin", sans-serif; letter-spacing: .14em; text-transform: uppercase; color: #1d1d1f; margin: 10px 0 8px; }
+#guest label span { text-transform: none; letter-spacing: 0; color: #8b857c; font-weight: 400; font-size: 12px; }
+#guest textarea, #guest input { width: 100%; box-sizing: border-box; font: 400 17px/1.75 "Instrument Sans", sans-serif; color: #1d1d1f; background: transparent; border: 0; border-bottom: 1px solid rgba(29,29,31,.35); border-radius: 0; padding: 4px 2px; resize: vertical; outline: none;
+  background-image: repeating-linear-gradient(transparent 0 29px, rgba(29,29,31,.1) 29px 30px); background-position: 0 4px; }
+#guest input { background-image: none; }
+#guest textarea:focus, #guest input:focus { border-bottom-color: #1d1d1f; }
+#guest ::placeholder { color: #a7a199; }
+#guest .count { text-align: right; font: 400 12px "Libre Franklin", sans-serif; color: #8b857c; margin-top: 4px; font-variant-numeric: tabular-nums; }
+#guest button[type=submit] { margin-top: 20px; font: 500 15px "Libre Franklin", sans-serif; color: #f7f5f0; background: #1d1d1f; border: 0; border-radius: 999px; padding: 13px 28px; cursor: pointer; transition: background .2s; }
+#guest button[type=submit]:hover { background: #3a3a3d; }
+#guest button[type=submit]:disabled { opacity: .5; cursor: default; }
+#guest .status { min-height: 1.4em; font: 500 15px/1.5 "Instrument Sans", sans-serif; margin: 14px 0 0; }
+#guest .fine { font: 400 12px/1.55 "Libre Franklin", sans-serif; color: #8b857c; margin: 16px 0 0; }
+#guest .close { position: absolute; top: 12px; right: 12px; z-index: 1; width: 40px; height: 40px; padding: 0; border-radius: 50%; display: grid; place-items: center; font: 300 24px/1 var(--font-sans); color: #1d1d1f; border: 1px solid rgba(29,29,31,.25); background: transparent; }
+@media (max-width: 760px) {
+  #guest .book { grid-template-columns: 1fr; overflow: auto; }
+  #guest .book::after { display: none; }
+  #guest .page { max-height: none; overflow: visible; padding: 26px 22px 20px; }
+  #guest .page.right { border-top: 1px solid rgba(29,29,31,.12); }
+  #guest ol { max-height: 38vh; overflow: auto; }
+  #guest h2 { font-size: 38px; }
+}
 
 /* entrance: the museum itself is the opening; one restrained button stands in front of the doorway */
 #entry { position: fixed; z-index: 10; left: 50%; top: 80%; transform: translate(-50%, -50%); transition: opacity .7s ease; }
@@ -253,32 +305,56 @@ body.touch #caption { bottom: calc(232px + env(safe-area-inset-bottom, 0px)); }
 /* guided tour: one compact line at the bottom; the usual caption and route bar step aside */
 body.tour #caption, body.tour #route { opacity: 0 !important; pointer-events: none !important; }
 #tourbar { position: fixed; z-index: 6; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
-  display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 14px 20px 12px; width: min(620px, calc(100vw - 32px)); box-sizing: border-box;
-  background: rgba(18,17,15,.62); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: var(--chalk);
-  font: 400 13px/1 var(--font-body); transition: opacity .6s ease; }
+  display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 16px 22px 14px; width: min(640px, calc(100vw - 32px)); box-sizing: border-box;
+  background: rgba(14,13,12,.72); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: var(--chalk); border-radius: 14px; border: 1px solid rgba(243,238,230,.08);
+  box-shadow: 0 20px 60px rgba(0,0,0,.35); font: 400 13px/1 var(--font-body); transition: opacity .6s ease; }
 #tourbar[hidden] { display: none; }
-#tourbar .read[hidden] { display: none; }
+#tourbar [hidden] { display: none !important; }
 #tourbar .row { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
-#tourbar .count { font-size: 11px; letter-spacing: .1em; color: #b9b1a5; white-space: nowrap; }
-#tourbar .note { margin: 0; font: 400 15px/1.5 "Libre Franklin", var(--font-sans); color: var(--chalk); text-wrap: pretty; }
+#tourbar .where { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: #d8cfc2; }
+#tourbar .count { font: 500 11px/1 "Libre Franklin", var(--font-sans); letter-spacing: .08em; color: #b9b1a5; white-space: nowrap; font-variant-numeric: tabular-nums; }
+#tourbar .prog { display: flex; gap: 3px; margin: 10px 0 14px; }
+#tourbar .prog i { flex: 1; height: 3px; border-radius: 2px; background: rgba(243,238,230,.16); cursor: pointer; transition: background .3s; }
+#tourbar .prog i.done { background: rgba(243,238,230,.55); }
+#tourbar .prog i.cur { background: #e9b36f; }
+#tourbar .prog i.gap { margin-left: 7px; }
+#tourbar .body { transition: opacity .25s ease, transform .25s ease; }
+#tourbar .body.swap { opacity: 0; transform: translateY(4px); }
+#tourbar .ttl { margin: 0; font: 500 clamp(24px, 3vw, 30px)/1.1 "Libre Franklin", var(--font-sans); letter-spacing: -.01em; color: #fff; }
+#tourbar .sub { margin: 6px 0 0; font: italic 400 17px/1.35 var(--font-body); color: #d8cfc2; }
+#tourbar .sub:empty { display: none; }
+#tourbar .note { margin: 12px 0 0; padding-left: 14px; border-left: 2px solid #e9b36f; font: 400 15px/1.55 "Libre Franklin", var(--font-sans); color: var(--chalk); text-wrap: pretty; }
 #tourbar .note:empty { display: none; }
-#tourbar .note .wt { display: block; font-weight: 600; margin-bottom: 3px; }
-#tourbar .look { color: #d8cfc2; margin-left: auto; }
+#tourbar .btns { display: flex; align-items: center; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
+#tourbar .sp { flex: 1; }
+#tourbar button { background: none; border: 0; border-bottom: 1px solid transparent; border-radius: 0; padding: 3px 0; font: 400 14px/1.2 "Libre Franklin", var(--font-sans); color: var(--chalk); cursor: pointer; }
+#tourbar button:hover, #tourbar button:focus-visible { border-bottom-color: var(--chalk); }
+#tourbar button:disabled { opacity: .35; cursor: default; border-bottom-color: transparent; }
+#tourbar .next { font-weight: 600; background: var(--chalk); color: #141210; border: 0; border-radius: 999px; padding: 9px 18px; }
+#tourbar .next:hover, #tourbar .next:focus-visible { background: #fff; }
+#tourbar .back { font-size: 18px; width: 36px; height: 36px; padding: 0; border: 1px solid rgba(243,238,230,.3); border-radius: 50%; }
+#tourbar .back:hover { border-color: var(--chalk); }
+#tourbar .play { width: 36px; height: 36px; padding: 0; border: 0; border-radius: 50%; }
+#tourbar .play svg { width: 36px; height: 36px; display: block; transform: rotate(-90deg); }
+#tourbar .play .trk { fill: none; stroke: rgba(243,238,230,.3); stroke-width: 1.5; }
+#tourbar .play .arc { fill: none; stroke: #e9b36f; stroke-width: 2; stroke-dasharray: 100.5; stroke-dashoffset: 100.5; transition: stroke-dashoffset .12s linear; }
+#tourbar .play .ico { fill: var(--chalk); transform: rotate(90deg); transform-origin: 18px 18px; }
+#tourbar .play:hover .trk { stroke: var(--chalk); }
+#tourbar .meta { display: flex; align-items: baseline; gap: 14px; }
+#tourbar .skip { color: #d8cfc2; font-size: 13px; }
+#tourbar .meta button { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #b9b1a5; padding: 0; }
+#tourbar .meta button:hover { color: var(--chalk); }
 #tourResume { position: fixed; z-index: 7; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
   background: rgba(18,17,15,.72); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: var(--chalk);
   border: 1px solid rgba(243,238,230,.35); border-radius: 999px; padding: 10px 18px; font: 500 14px/1 "Libre Franklin", var(--font-sans); }
 #tourResume[hidden] { display: none; }
-#tourbar .where { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #d8cfc2; }
-#tourbar .where b { font-weight: 400; color: var(--chalk); letter-spacing: .06em; text-transform: none; font-size: 13px; }
-#tourbar .btns { display: flex; gap: 16px; }
-#tourbar button { background: none; border: 0; border-bottom: 1px solid transparent; border-radius: 0; padding: 3px 0; font: inherit; color: var(--chalk); }
-#tourbar button:hover, #tourbar button:focus-visible { border-bottom-color: var(--chalk); }
-#tourbar button:disabled { opacity: .35; cursor: default; border-bottom-color: transparent; }
-#tourbar .next { font-weight: 600; }
-#tourbar .leave { color: #b9b1a5; }
-@media (max-width: 640px) { #tourbar { gap: 10px; padding: 12px 14px; } #tourbar .btns { flex-wrap: wrap; column-gap: 16px; row-gap: 8px; } #tourbar button { white-space: nowrap; } #tourbar .look { margin-left: 0; } #choose { flex-direction: column; gap: 14px; align-items: center; } }
+#fade { position: fixed; inset: 0; z-index: 40; background: #000; opacity: 0; pointer-events: none; transition: opacity .9s ease; }
+#fade.on { opacity: 1; pointer-events: auto; }
+@media (max-width: 640px) { #tourbar { padding: 14px 16px 12px; border-radius: 12px; } #tourbar .ttl { font-size: 22px; } #tourbar .sub { font-size: 15px; } #tourbar .note { font-size: 14px; margin-top: 10px; } #tourbar .btns { gap: 12px; margin-top: 12px; } #tourbar button { white-space: nowrap; } #tourbar .sp { display: none; } #tourbar .skip { margin-left: auto; } #tourbar .where { font-size: 10px; letter-spacing: .12em; line-height: 1.4; } #tourbar .meta { gap: 10px; } #tourbar .prog { margin: 8px 0 12px; } #choose { flex-direction: column; gap: 14px; align-items: center; } }
 #top, #caption, #route { transition: opacity .8s ease; opacity: 0; pointer-events: none; }
 body.inside #top, body.inside #caption, body.inside #route { opacity: 1; pointer-events: auto; }
+/* while walking, the labels step back so the hall can be seen; they return a moment after the visitor stops */
+body.inside.moving #top, body.inside.moving #caption, body.inside.moving #route { opacity: .12; transition: opacity .35s ease; }
 /* lightbox: a work opens large on a dark ground, its label underneath */
 #lightbox { position: fixed; inset: 0; z-index: 30; background: rgba(14,12,10,.97); display: grid; place-items: center; padding: 56px 72px 28px; opacity: 0; transition: opacity .35s ease; }
 #lightbox[hidden] { display: none; }
@@ -307,6 +383,7 @@ body.inside #top, body.inside #caption, body.inside #route { opacity: 1; pointer
 <header id="top" class="chrome">
   <div><div class="museum">Body Moves</div><div class="room">Entrance</div></div>
   <div class="tools">
+    <span class="photoWrap"><button id="photoBtn" type="button" aria-label="Take a photo" title="Take a photo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5h3l1.6-2h6.8l1.6 2h3v10H4z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="13.2" r="3.3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button><span id="photoHint" role="status" hidden>Photos welcome</span></span>
     <button id="soundBtn" type="button" aria-pressed="true">Sound on</button>
     <button id="tourTop" type="button">Guided tour</button>
     <div id="pulse" hidden role="img" aria-label="Your pulse: 72 beats per minute"><span class="heart" aria-hidden="true">♥</span><span class="bpm" aria-hidden="true">72</span><span class="u" aria-hidden="true">BPM</span><canvas width="156" height="44" aria-hidden="true"></canvas></div>
@@ -350,6 +427,29 @@ body.inside #top, body.inside #caption, body.inside #route { opacity: 1; pointer
     <p class="note">Each image is a slice through the middle of the thigh, front at the top: muscle, the thigh bone, and fat under the skin. An illustrative model, not a forecast for one person.<br><br>With age, adults lose about 0.4–0.5% of their muscle mass a year, and around 75 the loss speeds up to about 0.6–1% a year. Strength falls two to five times faster than muscle.<br><br>Strength training does not stop this, but it changes how much is kept. Men in their seventies and eighties who had been strength athletes for decades had less muscle in their arms and legs than young strength athletes, yet about a sixth more than men of their age who did no regular training. People around retirement age who lifted heavy weights three times a week for a year still had the same maximal leg strength four years after they started, while those who did not train had grown weaker; their leg muscle, though, still shrank, as it did in everyone. Even at 75 and over, strength training still builds both strength and muscle.<br><br>Sources: Mitchell et al., 2012; Walker et al., 2023; Bloch-Ibenfeldt et al., 2024; Grgic et al., 2020 (full references in the catalogue). No study has followed the same people from 20 to 80; both lines are drawn from these findings.</p>
   </div></div>
 </div>
+<div id="guest" role="dialog" aria-modal="true" aria-labelledby="guestTitle" hidden>
+  <div class="book">
+    <button class="close" type="button" aria-label="Close the guestbook">×</button>
+    <section class="page left">
+      <h2 id="guestTitle">Guestbook</h2>
+      <p class="sub">Notes from visitors to Body Moves</p>
+      <ol id="guestList" aria-live="polite"></ol>
+    </section>
+    <section class="page right">
+      <form id="guestForm" autocomplete="off">
+        <label for="guestNote">Your note</label>
+        <textarea id="guestNote" maxlength="300" rows="6" required placeholder="What will you remember from the visit?"></textarea>
+        <div class="count"><span id="guestCount">0</span> / 300</div>
+        <label for="guestName">Your name <span>(optional)</span></label>
+        <input id="guestName" type="text" maxlength="40" placeholder="Anonymous">
+        <button type="submit" id="guestSend">Sign the book</button>
+        <p class="status" id="guestStatus" role="status"></p>
+        <p class="fine">Notes are public and appear in the book for every visitor. Please don't write an email address or phone number.</p>
+      </form>
+    </section>
+  </div>
+</div>
+
 <div id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lbTitle" hidden>
   <button class="lb-close" type="button" aria-label="Close">×</button>
   <button class="lb-nav lb-prev" type="button" aria-label="Previous work">←</button>
@@ -373,13 +473,30 @@ body.inside #top, body.inside #caption, body.inside #route { opacity: 1; pointer
   <div class="k">How to walk</div>
   <ul>
     <li><b>Drag</b> to look around</li>
-    <li><b>Scroll</b> or <b>W A S D</b> to walk</li>
+    <li><b>Scroll</b>, <b>W A S D</b> or the <b>circle</b> (bottom left) to walk</li>
     <li><b>Click a work</b> to see it large</li>
     <li><b>← →</b> to follow the route</li>
+    <li><b>Camera</b> (top right) to take a photo</li>
   </ul>
 </div>
 <div id="tourbar" role="navigation" aria-label="Guided tour" hidden>
-  <div class="row"><span class="where" id="tourWhere"></span><span class="count" id="tourCount"></span></div>
+  <div class="row"><span class="where" id="tourWhere"></span><span class="meta"><span class="count" id="tourCount"></span><button class="look" id="tourLook" type="button">Look around</button><button class="leave" id="tourLeave" type="button">Leave</button></span></div>
+  <div class="prog" id="tourProg" aria-hidden="true"></div>
+  <div class="body" id="tourBody">
+    <h3 class="ttl" id="tourTitle"></h3>
+    <p class="sub" id="tourSub"></p>
+    <p class="note" id="tourNote" aria-live="polite"></p>
+  </div>
+  <div class="btns">
+    <button class="play" id="tourPlay" type="button" aria-label="Play the tour automatically" title="Autoplay"><svg viewBox="0 0 36 36" aria-hidden="true"><circle class="trk" cx="18" cy="18" r="16"/><circle class="arc" id="tourArc" cx="18" cy="18" r="16"/><path class="ico" id="tourIco" d="M14.5 11.5v13l10-6.5z"/></svg></button>
+    <button class="back" id="tourBack" type="button" aria-label="Previous stop">←</button>
+    <button class="next" id="tourNext" type="button">Continue →</button>
+    <button class="read" id="tourRead" type="button" hidden>Read the text</button>
+    <button class="all" id="tourAll" type="button" hidden>See all works</button>
+    <span class="sp"></span>
+    <button class="skip" id="tourSkip" type="button">Next hall ⇥</button>
+  </div>
+</div>
   <p class="note" id="tourNote" aria-live="polite"></p>
   <span class="btns"><button class="back" id="tourBack" type="button">← Back</button><button class="next" id="tourNext" type="button">Continue →</button><button class="read" id="tourRead" type="button" hidden>Read the text</button><button class="look" id="tourLook" type="button">Look around</button><button class="leave" id="tourLeave" type="button">Leave tour</button></span>
 </div>
@@ -389,6 +506,8 @@ body.inside #top, body.inside #caption, body.inside #route { opacity: 1; pointer
   <div id="panelBody"></div>
 </aside>
 
+<div id="fade" aria-hidden="true"></div>
+<div id="flash" aria-hidden="true"></div>
 <div id="entry">
   <h1 class="sr">Body Moves. If you know, you know. Temporary exhibition.</h1>
   <button id="enter" type="button" disabled>Preparing the exhibition…</button>
@@ -1740,11 +1859,11 @@ function buildProjector() {
   });
   const screen = new THREE.Mesh(new THREE.PlaneGeometry(PROJ.w, PROJ.h), screenMat);
   screen.position.set(0, PROJ.y, 0.003); screen.renderOrder = 2; g.add(screen);
-  /* its label, like every work: below the image, at its left edge */
-  const plW = 1.05, plH = 0.36, plD = 0.02;
+  /* its label, as in a gallery: to the right of the image, at eye level, a little larger than the others */
+  const plW = 1.05 * 1.15, plH = 0.36 * 1.15, plD = 0.02;
   const plaque = new THREE.Mesh(new THREE.BoxGeometry(plW, plH, plD),
     [matMat, matMat, matMat, matMat, new THREE.MeshStandardMaterial({ map: canvasTex(plaqueCanvas(PROJ.label)), roughness: 0.9 }), matMat]);
-  const plx = -PROJ.w / 2 + plW / 2, ply = PROJ.y - PROJ.h / 2 - 0.12 - plH / 2;
+  const plx = PROJ.w / 2 + 0.35 + plW / 2, ply = 1.45;
   plaque.position.set(plx, ply, 0.004 + plD / 2); g.add(plaque);
   decal(g, shadowTex, plx, ply - 0.02, plW * 1.05, plH * 1.1, 0.002, 0.26);
   const v = document.createElement("video");
@@ -2075,6 +2194,79 @@ let kioskQueued = false;
 kioskSlider.addEventListener("input", () => { if (kioskQueued) return; kioskQueued = true; requestAnimationFrame(() => { kioskQueued = false; kioskRender(); }); });   /* one redraw per frame */
 kioskEl.querySelector(".close").addEventListener("click", closeKiosk);
 kioskEl.addEventListener("click", e => { if (!e.target.closest(".bezel")) closeKiosk(); });
+/* ---------------- guestbook overlay ---------------- */
+const guestEl = document.getElementById("guest"), guestList = document.getElementById("guestList"), guestForm = document.getElementById("guestForm");
+const guestNote = document.getElementById("guestNote"), guestName = document.getElementById("guestName"), guestStatus = document.getElementById("guestStatus"), guestSend = document.getElementById("guestSend");
+const GUEST_MINE = "bm-guest-mine";
+function guestCsv(text) {   /* a small CSV reader: quoted fields may hold commas, quotes and line breaks */
+  const rows = []; let row = [], f = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === ",") { row.push(f); f = ""; }
+    else if (ch === "\n" || ch === "\r") { if (ch === "\r" && text[i + 1] === "\n") i++; row.push(f); rows.push(row); row = []; f = ""; }
+    else f += ch;
+  }
+  if (f !== "" || row.length) { row.push(f); rows.push(row); }
+  return rows;
+}
+function guestDate(s) {   /* the sheet writes "28.11.2026 14:03:22" or "11/28/2026 14:03:22"; the book shows "28 Nov 2026" */
+  const M = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  let m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})/.exec(s); if (m) return `${+m[1]} ${M[+m[2] - 1]} ${m[3]}`;
+  m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s); if (m) return `${+m[2]} ${M[+m[1] - 1]} ${m[3]}`;
+  return (s || "").split(" ")[0];
+}
+function guestMine() { try { return JSON.parse(localStorage.getItem(GUEST_MINE) || "[]"); } catch (_) { return []; } }
+let guestRows = [], guestLoaded = false, guestInSheet = new Set();
+function guestRender() {
+  /* my own notes, until the published sheet catches up (a few minutes); once a note is in the sheet, the sheet decides, Hide included */
+  const mine = guestMine().filter(r => !guestInSheet.has(r.note.trim()));   /* my own notes, until the published sheet catches up (a few minutes) */
+  const all = mine.concat(guestRows);
+  guestDrawPages(all.slice(0, 6));
+  guestList.innerHTML = all.length ? all.map(r => `<li><div class="t">${esc(r.note)}</div><div class="by">${esc(r.name || "Anonymous")}${r.date ? " · " + esc(r.date) : ""}</div></li>`).join("")
+    : `<li class="empty">${guestLoaded ? "No notes yet. Be the first to sign the book." : "Opening the book…"}</li>`;
+}
+async function guestLoad() {
+  try {
+    const res = await fetch(GUEST.csv + "&t=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) throw new Error(res.status);
+    const rows = guestCsv(await res.text()).slice(1);
+    guestInSheet = new Set(rows.map(r => (r[2] || "").trim()).filter(Boolean));
+    try { const left = guestMine().filter(r => !guestInSheet.has(r.note.trim())); localStorage.setItem(GUEST_MINE, JSON.stringify(left)); } catch (_) {}
+    guestRows = rows.filter(r => (r[2] || "").trim() && !(r[3] || "").trim())
+      .map(r => ({ date: guestDate(r[0]), name: (r[1] || "").trim(), note: r[2].trim() })).reverse();
+    guestLoaded = true;
+  } catch (err) { console.warn("guestbook: could not read the notes", err); guestLoaded = true; }
+  guestRender();
+}
+function openGuestbook() {
+  guestEl.hidden = false; requestAnimationFrame(() => guestEl.classList.add("open"));
+  hideHint(); guestRender(); guestLoad();
+  if (!document.body.classList.contains("touch")) guestNote.focus({ preventScroll: true });
+}
+function closeGuestbook() { if (guestEl.hidden) return; guestEl.classList.remove("open"); setTimeout(() => { guestEl.hidden = true; }, 300); }
+guestEl.querySelector(".close").addEventListener("click", closeGuestbook);
+guestEl.addEventListener("click", e => { if (!e.target.closest(".book")) closeGuestbook(); });
+guestNote.addEventListener("input", () => { document.getElementById("guestCount").textContent = guestNote.value.length; });
+guestForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const note = guestNote.value.trim(), name = guestName.value.trim();
+  if (!note) { guestStatus.textContent = "Write a few words first."; guestNote.focus(); return; }
+  guestSend.disabled = true; guestStatus.textContent = "Signing…";
+  try {
+    const body = new URLSearchParams(); body.append(GUEST.name, name); body.append(GUEST.note, note);
+    await fetch(GUEST.post, { method: "POST", mode: "no-cors", body });   /* Google answers opaquely; a network error is the only failure we can see */
+    const today = guestDate(new Date().toLocaleDateString("ru-RU"));
+    try { const mine = guestMine(); mine.unshift({ name, note, date: today }); localStorage.setItem(GUEST_MINE, JSON.stringify(mine.slice(0, 20))); } catch (_) {}
+    guestNote.value = ""; document.getElementById("guestCount").textContent = "0";
+    guestStatus.textContent = "Thank you for visiting. Your note is in the book.";
+    guestRender(); guestList.scrollTop = 0;
+  } catch (err) {
+    guestStatus.textContent = "The note could not be sent. Please check the connection and try again.";
+  }
+  guestSend.disabled = false;
+});
 /* the screen in the hall: title, slider and the two slices for one age. The slider sits at x 110–790, y 605
    on a 1820 × 1024 canvas; dragging there (see the pointer handlers) changes the age */
 const KS = { x0: 110, x1: 790, y: 605, slices: null };
@@ -2228,6 +2420,275 @@ if (it.pairOf) {
 const detectorMat = new THREE.MeshStandardMaterial({ color: 0xe8e5df, roughness: 0.6 });
 const ventMat = new THREE.MeshStandardMaterial({ color: 0x2b2f3a, roughness: 0.8 });
 const ledMat = new THREE.MeshBasicMaterial({ color: 0x3fd16a });
+/* ---------------- guestbook: a lectern with an open book in the dark exit room ----------------
+   Notes go to a Google Form; the form's sheet is published as CSV and read back into the book.
+   A row with anything in the "Hide" column is left out, so the owner can take a note down from the sheet. */
+const GUEST = {
+  csv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vR0BN9eKvGD8aicgvYZm_mSmYYd7h6Eln2_YSGtVZcxAOxqs9lIiw6VcW78YzBuCQks7rPS7k-ltBLN/pub?gid=1880668598&single=true&output=csv",
+  post: "https://docs.google.com/forms/d/e/1FAIpQLSeljzEU24b42mj6F7vPjw3UNqzs8hYTpr1PsjkFYyEvHCzN5g/formResponse",
+  name: "entry.1009345076", note: "entry.490181733"
+};
+function guestPagesCanvas(notes = []) {   /* a modern lined guestbook: white paper, a soft gutter; the latest real notes, in handwriting */
+  const c = GUEST.pagesCanvas || (GUEST.pagesCanvas = document.createElement("canvas")); c.width = 2048; c.height = 1400;
+  const g = c.getContext("2d"), W = c.width, H = c.height, mid = W / 2;
+  g.fillStyle = "#f6f4ef"; g.fillRect(0, 0, W, H);
+  const gut = g.createLinearGradient(mid - 220, 0, mid + 220, 0);
+  gut.addColorStop(0, "rgba(0,0,0,0)"); gut.addColorStop(0.42, "rgba(60,50,40,.10)"); gut.addColorStop(0.5, "rgba(60,50,40,.30)"); gut.addColorStop(0.58, "rgba(60,50,40,.10)"); gut.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = gut; g.fillRect(mid - 220, 0, 440, H);
+  const edge = (x0, x1) => { const e = g.createLinearGradient(x0, 0, x1, 0); e.addColorStop(0, "rgba(60,50,40,.08)"); e.addColorStop(1, "rgba(0,0,0,0)"); return e; };
+  g.fillStyle = edge(0, 60); g.fillRect(0, 0, 60, H); g.fillStyle = edge(W, W - 60); g.fillRect(W - 60, 0, 60, H);
+  g.fillStyle = "#1d1d1f"; g.font = `600 34px 'Libre Franklin', sans-serif`; g.letterSpacing = "8px";
+  g.fillText("BODY MOVES · GUESTBOOK", 130, 170);
+  g.fillStyle = "#8b857c"; g.font = `500 30px 'Libre Franklin', sans-serif`; g.fillText("LEAVE A NOTE", mid + 110, 170); g.letterSpacing = "0px";
+  const LH = 92, Y0 = 300;
+  g.strokeStyle = "rgba(29,29,31,.13)"; g.lineWidth = 2;
+  for (let y = Y0; y < H - 110; y += LH) { g.beginPath(); g.moveTo(130, y); g.lineTo(mid - 110, y); g.moveTo(mid + 110, y); g.lineTo(W - 130, y); g.stroke(); }
+  g.strokeStyle = "#1d1d1f"; g.lineWidth = 3; g.beginPath(); g.moveTo(130, 205); g.lineTo(180, 205); g.stroke();
+  /* the newest notes, written on the lines as a visitor would, each signed on the right */
+  let line = 0; const maxLines = Math.floor((H - 110 - Y0) / LH) + 1, maxW = mid - 110 - 150;
+  let seed = 5; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (const n of notes) {
+    if (line >= maxLines - 1) break;
+    g.font = `500 ${62 + rnd() * 6}px 'Caveat', cursive`;
+    const words = n.note.replace(/\s+/g, " ").split(" "), rows = []; let cur = "";
+    for (const w of words) { const t = cur ? cur + " " + w : w; if (g.measureText(t).width > maxW && cur) { rows.push(cur); cur = w; } else cur = t; }
+    if (cur) rows.push(cur);
+    const room = maxLines - 1 - line; if (rows.length > room) { rows.length = room; rows[room - 1] = rows[room - 1].replace(/\s*\S*$/, "") + "…"; }
+    g.fillStyle = `rgba(${26 + rnd() * 10},${34 + rnd() * 8},${70 + rnd() * 20},.88)`;
+    rows.forEach(r => { g.save(); g.translate(150 + rnd() * 10, Y0 + line * LH - 14); g.rotate((rnd() - 0.5) * 0.012); g.fillText(r, 0, 0); g.restore(); line++; });
+    g.font = `500 52px 'Caveat', cursive`; const sig = "— " + (n.name || "anonymous");
+    g.fillText(sig, mid - 110 - 30 - g.measureText(sig).width, Y0 + line * LH - 14); line++;
+  }
+  return c;
+}
+function guestDrawPages(notes) { if (!GUEST.pagesTex) return; guestPagesCanvas(notes); GUEST.pagesTex.needsUpdate = true; }
+function roundedSlab(w, d, t, r) {   /* a flat slab with softly rounded corners and edges, lying in XZ */
+  const s = new THREE.Shape(), x = w / 2 - r, z = d / 2 - r;
+  s.moveTo(-x, -d / 2); s.lineTo(x, -d / 2); s.quadraticCurveTo(w / 2, -d / 2, w / 2, -z); s.lineTo(w / 2, z); s.quadraticCurveTo(w / 2, d / 2, x, d / 2);
+  s.lineTo(-x, d / 2); s.quadraticCurveTo(-w / 2, d / 2, -w / 2, z); s.lineTo(-w / 2, -z); s.quadraticCurveTo(-w / 2, -d / 2, -x, -d / 2);
+  const bev = Math.min(0.0015, t / 4);
+  const geo = new THREE.ExtrudeGeometry(s, { depth: t - 2 * bev, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 2, curveSegments: 6 });
+  geo.rotateX(Math.PI / 2); geo.translate(0, t - bev, 0);
+  return geo;
+}
+function buildGuestbook(g, x0, x1) {
+  const X = x1 - 1.7, Z = DEPTH / 2 + 1.65;   /* off to one side, so the closing words stay in clear view */
+  const lec = new THREE.Group(); lec.position.set(X, 0, Z); lec.rotation.y = Math.atan2(x0 + 3.4 - X, DEPTH / 2 - Z);   /* the reading side turns to the visitor who has just walked in */
+  g.add(lec);
+  /* a slim museum plinth in warm white, its top cut at a slant, standing on a recessed dark plinth base */
+  const PW = 0.5, PD = 0.38, HF = 1.0, HB = 1.11, TOE = 0.035, bev = 0.006;
+  const prof = new THREE.Shape(); prof.moveTo(-PD / 2, 0); prof.lineTo(PD / 2, 0); prof.lineTo(PD / 2, HB - TOE); prof.lineTo(-PD / 2, HF - TOE); prof.closePath();
+  const pGeo = new THREE.ExtrudeGeometry(prof, { depth: PW - 2 * bev, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 3, curveSegments: 1 });
+  pGeo.translate(0, 0, -(PW - 2 * bev) / 2);
+  const plMat = new THREE.MeshStandardMaterial({ color: 0xe9e5dd, roughness: 0.82, metalness: 0 });
+  const plinth = new THREE.Mesh(pGeo, plMat); plinth.rotation.y = Math.PI / 2; plinth.position.y = TOE; lec.add(plinth);
+  const toe = new THREE.Mesh(new THREE.BoxGeometry(PW - 0.04, TOE, PD - 0.04), new THREE.MeshStandardMaterial({ color: 0x141416, roughness: 0.9 })); toe.position.y = TOE / 2; lec.add(toe);
+  /* vinyl lettering on the front face */
+  const label = signMesh([
+    { text: "GUESTBOOK", font: `700 70px ${DISPLAY}`, size: 70, color: "#2a2a2c", spacing: "3px" },
+    { text: "Leave a note about your visit", font: `400 28px 'Libre Franklin'`, size: 28, gap: 14, color: "#6d6862" }
+  ], 0.4, 0.15, 1200);
+  label.position.set(0, HF - 0.2, PD / 2 + bev + 0.001); lec.add(label);
+  /* the slanted top: the book lies on it */
+  const slope = Math.atan2(HB - HF, PD), top = new THREE.Group();
+  top.position.set(0, (HF + HB) / 2 + bev, 0); top.rotation.x = slope; lec.add(top);
+  /* ---- the book: cloth-covered boards, a curved text block with real page edges, head bands, a ribbon ---- */
+  const bk = new THREE.Group(); bk.position.set(0, 0.0005, 0.012); top.add(bk);
+  const envM = lampBlack.envMap;
+  const stripes = (vertical, n) => {   /* fine page edges: hundreds of sheets seen side-on */
+    const c = document.createElement("canvas"); c.width = c.height = 256; const g2 = c.getContext("2d");
+    g2.fillStyle = "#f1eee7"; g2.fillRect(0, 0, 256, 256);
+    for (let k = 0; k < n; k++) { const p = (k + Math.random() * 0.6) * 256 / n, a = 0.05 + Math.random() * 0.1; g2.fillStyle = `rgba(90,80,66,${a})`; vertical ? g2.fillRect(p, 0, 1.2, 256) : g2.fillRect(0, p, 256, 1.2); }
+    const t = canvasTex(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  };
+  const linen = (() => {   /* a woven cloth, felt more than seen */
+    const N = 256, c = document.createElement("canvas"); c.width = c.height = N; const g2 = c.getContext("2d"), img = g2.createImageData(N, N), n = fbm(N, 2, 24, 0.5);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const i = y * N + x, w = ((x >> 1) + (y >> 1)) % 2 ? 0.14 : -0.14, v = Math.max(0, Math.min(255, (0.5 + (n[i] - 0.5) * 0.6 + w + (Math.random() - 0.5) * 0.18) * 255)); img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = v; img.data[i * 4 + 3] = 255; }
+    g2.putImageData(img, 0, 0); const t = canvasTex(c, false); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(14, 10); return t;
+  })();
+  const coverMat = new THREE.MeshStandardMaterial({ color: 0x2b2c30, roughness: 0.93, bumpMap: linen, bumpScale: 0.0008, roughnessMap: linen });
+  const BT = 0.0032, BW = 0.236, BD = 0.326;   /* board thickness and size */
+  [-1, 1].forEach(sd => { const b = new THREE.Mesh(roundedSlab(BW, BD, BT, 0.004), coverMat); b.position.x = sd * (BW / 2 + 0.003); bk.add(b); });
+  const spine = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, BD - 0.002, 20, 1, false, Math.PI / 2, Math.PI), coverMat);
+  spine.rotation.x = Math.PI / 2; spine.rotation.z = Math.PI; spine.scale.set(1, 1, 0.5); spine.position.y = 0.0045; bk.add(spine);
+  /* the text block, one curved solid across both pages: it dips into the gutter and rises over each page */
+  const HW = 0.226, PD2 = 0.314;
+  const hTop = x => { const u = Math.min(1, Math.abs(x) / HW); return 0.006 + 0.016 * Math.sin(Math.PI * Math.min(1, u * 1.08)) * (1 - 0.45 * u) + 0.004 * u; };
+  const bProf = new THREE.Shape(); bProf.moveTo(-HW, 0); bProf.lineTo(HW, 0);
+  for (let k = 0; k <= 64; k++) { const x = HW - (2 * HW) * k / 64; bProf.lineTo(x, hTop(x)); }
+  bProf.closePath();
+  const sGeo = new THREE.ExtrudeGeometry(bProf, { depth: PD2, bevelEnabled: false, curveSegments: 1 }); sGeo.translate(0, 0, -PD2 / 2);
+  const capTex = stripes(false, 90); capTex.repeat.set(4, 30);   /* head and tail: the sheets run across */
+  const foreTex = stripes(true, 90); foreTex.repeat.set(30, 4);  /* fore-edges */
+  const block = new THREE.Mesh(sGeo, [new THREE.MeshStandardMaterial({ map: capTex, roughness: 0.95 }), new THREE.MeshStandardMaterial({ map: foreTex, roughness: 0.95 })]);
+  block.position.y = BT; bk.add(block);
+  /* the open pages on top, with a faint paper grain */
+  const pgW = 2 * HW, pg = new THREE.PlaneGeometry(pgW, PD2, 96, 1), pp = pg.attributes.position;
+  for (let i = 0; i < pp.count; i++) pp.setZ(i, hTop(pp.getX(i)) + 0.0002);
+  pg.computeVertexNormals();
+  const pagesTex = canvasTex(guestPagesCanvas()); pagesTex.anisotropy = 8; GUEST.pagesTex = pagesTex;
+  const grainN = fbm(256, 3, 48, 0.55), grain = toTex(256, i => { const h = (0.5 + (grainN[i] - 0.5) * 0.9) * 255; return [h, h, h]; }, false); grain.repeat.set(8, 6);
+  const pages = new THREE.Mesh(pg, new THREE.MeshStandardMaterial({ map: pagesTex, roughness: 0.9, bumpMap: grain, bumpScale: 0.0004 }));
+  pages.rotation.x = -Math.PI / 2; pages.position.y = BT; bk.add(pages);
+  /* head bands at both ends of the spine, and a ribbon marker out of the gutter */
+  [-1, 1].forEach(sd => { const hb = new THREE.Mesh(new THREE.CylinderGeometry(0.0022, 0.0022, 0.012, 10), new THREE.MeshStandardMaterial({ color: 0x7a2a22, roughness: 0.8 })); hb.rotation.z = Math.PI / 2; hb.position.set(0, BT + 0.004, sd * (PD2 / 2 + 0.0008)); bk.add(hb); });
+  const rb = new THREE.CatmullRomCurve3([new THREE.Vector3(0.001, BT + hTop(0.001) + 0.0004, 0.06), new THREE.Vector3(0.003, BT + hTop(0.003) + 0.0004, PD2 / 2 - 0.002), new THREE.Vector3(0.006, BT + 0.002, PD2 / 2 + 0.008), new THREE.Vector3(0.01, -0.012, PD2 / 2 + 0.012), new THREE.Vector3(0.012, -0.03, PD2 / 2 + 0.01)]);
+  const ribbon = new THREE.Mesh(new THREE.TubeGeometry(rb, 40, 0.0028, 4, false), new THREE.MeshStandardMaterial({ color: 0x6e231c, roughness: 0.6 }));
+  ribbon.scale.set(1, 0.25, 1); ribbon.position.y = 0.0006; bk.add(ribbon);
+  /* ---- the pen: a lacquered ballpoint with a chrome tip, ring and clip, resting on the right page ---- */
+  const lac = new THREE.MeshPhysicalMaterial({ color: 0x0d0d0f, roughness: 0.22, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.08, envMap: envM, envMapIntensity: 1.2 });
+  const chrome = new THREE.MeshStandardMaterial({ color: 0xd8d6d2, roughness: 0.18, metalness: 1, envMap: envM, envMapIntensity: 1.4 });
+  const P = (r, y) => new THREE.Vector2(r, y);
+  const penBody = new THREE.Mesh(new THREE.LatheGeometry([P(0.0031, 0.0145), P(0.0040, 0.018), P(0.0042, 0.038), P(0.0045, 0.042), P(0.0047, 0.06), P(0.0047, 0.094), P(0.00465, 0.128), P(0.0042, 0.134), P(0.0026, 0.1385), P(0.0, 0.1392)], 40), lac);
+  const penTip = new THREE.Mesh(new THREE.LatheGeometry([P(0.0, 0.0), P(0.0004, 0.0003), P(0.0007, 0.0012), P(0.0014, 0.004), P(0.0027, 0.0125), P(0.0031, 0.0148)], 40), chrome);
+  const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.00478, 0.00478, 0.0032, 40), chrome); ring.position.y = 0.097;
+  const clipPath = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0.131, 0.0046), new THREE.Vector3(0, 0.129, 0.0062), new THREE.Vector3(0, 0.118, 0.0060), new THREE.Vector3(0, 0.104, 0.0056), new THREE.Vector3(0, 0.099, 0.0051)]);
+  const clip = new THREE.Mesh(new THREE.TubeGeometry(clipPath, 24, 0.0008, 8, false), chrome); clip.scale.x = 2.2;
+  const pen = new THREE.Group(); [penBody, penTip, ring, clip].forEach(m => pen.add(m));
+  const penX = 0.13, penMid = 0.138, yaw = 0.12;
+  pen.rotation.order = "YXZ"; pen.rotation.set(Math.PI / 2, yaw, 0); pen.rotateY(0.9);   /* lying along the page, the clip turned up a little */
+  pen.position.set(penX, BT + hTop(penMid) + 0.0047, -0.065); bk.add(pen);
+  const penShadow = decal(bk, shadowTex, 0, 0, 0.022, 0.15, 0, 0.32); penShadow.rotation.set(-Math.PI / 2, 0, yaw); penShadow.position.set(penMid + 0.002, BT + hTop(penMid) + 0.0006, 0.004);
+  /* contact shadows, so the plinth and the book sit on their surfaces */
+  const cs = decal(lec, shadowTex, 0, 0, PW + 0.2, PD + 0.2, 0, 0.55); cs.rotation.x = -Math.PI / 2; cs.position.y = 0.003;
+  const cs2 = decal(top, shadowTex, 0, 0, 0.56, 0.4, 0, 0.35); cs2.rotation.x = -Math.PI / 2; cs2.position.y = 0.0008;
+  [plinth, toe, label].forEach(m => { m.userData = { type: "guestbook" }; clickables.push(m); });
+  bk.traverse(m => { if (m.isMesh) { m.userData = { type: "guestbook" }; clickables.push(m); } });
+  g.updateMatrixWorld(true);
+  if (document.fonts) document.fonts.load("60px Caveat").then(() => guestLoad(), () => guestLoad()); else guestLoad();   /* the book on the lectern shows the newest real notes */
+  /* its own soft light from the ceiling */
+  const lampAt = g.localToWorld(new THREE.Vector3(X - 0.6, CEIL - 0.32, Z - 0.2)), aimAt = g.localToWorld(new THREE.Vector3(X, 0.95, Z));
+  const L = new THREE.SpotLight(LAMP, 0, 0, 0.3, 1.0, 1);
+  L.position.copy(lampAt); L.target.position.copy(aimAt); scene.add(L, L.target);
+  staticRects.push({ light: L, power: 0.55, beamK: 0.25 });
+  const dirF = aimAt.clone().sub(lampAt).normalize(), fit = new THREE.Group(); fit.position.copy(lampAt); scene.add(fit);
+  const can = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.17, 24), lampBlack);
+  can.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dirF.clone().negate()); can.position.addScaledVector(dirF, -0.05); fit.add(can);
+  const lensF = new THREE.Mesh(new THREE.CircleGeometry(0.04, 24), new THREE.MeshBasicMaterial({ color: 0xffe3bf, toneMapped: false }));
+  lensF.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), dirF); lensF.position.addScaledVector(dirF, 0.036); fit.add(lensF);
+}
+/* ---------------- the way round: a door left ajar in the dark room, warm light behind it ----------------
+   Walking through it (or clicking it) fades to black and brings the visitor back to the entrance:
+   after After comes Before again, the same workout, a little easier next time. */
+const LOOP = { at: null, end: null, busy: false };
+function lightWedgeTex() {
+  const c = document.createElement("canvas"); c.width = 256; c.height = 512; const g = c.getContext("2d");
+  const gr = g.createLinearGradient(0, 0, 0, 512); gr.addColorStop(0, "rgba(255,236,206,0.95)"); gr.addColorStop(0.35, "rgba(255,230,196,0.35)"); gr.addColorStop(1, "rgba(255,226,190,0)");
+  g.fillStyle = gr; g.beginPath(); g.moveTo(96, 0); g.lineTo(160, 0); g.lineTo(256, 512); g.lineTo(40, 512); g.closePath(); g.fill();
+  const t = canvasTex(c); return t;
+}
+const LOOP_DOOR = { z: DEPTH - 1.4, w: 0.92, h: 2.12, wall: 0.16 };   /* the doorway in the dark room's far wall, to the right of the guestbook */
+function gradTex(stops, w = 64, h = 256, vertical = true) {
+  const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d");
+  const gr = vertical ? g.createLinearGradient(0, 0, 0, h) : g.createLinearGradient(0, 0, w, 0);
+  stops.forEach(([p, col]) => gr.addColorStop(p, col)); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  return canvasTex(c);
+}
+function buildLoopDoor(g, x0, x1) {
+  const DW = LOOP_DOOR.w, DH = LOOP_DOOR.h, T = LOOP_DOOR.wall;
+  const d = new THREE.Group(); d.position.set(x1, 0, LOOP_DOOR.z); d.rotation.y = -Math.PI / 2; g.add(d);   /* the opening's centre at floor level; local +z faces into the room */
+  /* the reveal: the wall has a real thickness at the opening, painted warm white and lit from the corridor */
+  const revealMat = new THREE.MeshBasicMaterial({ map: gradTex([[0, "#141312"], [1, "#2b2620"]], 8, 64, false), toneMapped: false });
+  const jambL = new THREE.Mesh(new THREE.PlaneGeometry(T, DH), revealMat); jambL.rotation.y = Math.PI / 2; jambL.position.set(-DW / 2, DH / 2, -T / 2); d.add(jambL);
+  const jambR = new THREE.Mesh(new THREE.PlaneGeometry(T, DH), revealMat); jambR.rotation.y = -Math.PI / 2; jambR.position.set(DW / 2, DH / 2, -T / 2); d.add(jambR);
+  const head = new THREE.Mesh(new THREE.PlaneGeometry(DW, T), new THREE.MeshBasicMaterial({ color: new THREE.Color(0x1a1816).convertSRGBToLinear(), toneMapped: false })); head.rotation.x = Math.PI / 2; head.position.set(0, DH, -T / 2); d.add(head);
+  /* the corridor beyond: dark, plain walls lit only by a low warm cove line along the floor, fading into
+     darkness ahead. There is no end to see; a few steps in, the visit simply begins again at the entrance. */
+  const CL = 11, CW = 1.5, CH = 2.45, z0 = -T, z1 = -T - CL, cz = (z0 + z1) / 2;
+  const fadeAt = u => Math.max(0, 1 - Math.pow(u / 0.66, 1.6));   /* u: 0 at the door, 1 at the far end; gone into black by about 7 m */
+  const wallCanvas = (() => {
+    const W = 512, H = 128, c = document.createElement("canvas"); c.width = W; c.height = H; const q = c.getContext("2d"), img = q.createImageData(W, H), n = fbm(256, 3, 24, 0.55);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const u = x / W, v = 1 - y / H;   /* v: 0 at the floor, 1 at the ceiling */
+      const glow = Math.exp(-v * 9) * 0.55 + Math.exp(-v * 2.4) * 0.08, f = fadeAt(u);
+      const grain = (n[(y * 2 % 256) * 256 + (x % 256)] - 0.5) * 0.025;
+      const L = Math.max(0, 0.018 + (glow + grain) * f);
+      const i = (y * W + x) * 4; img.data[i] = Math.min(255, L * 255 * 1.12); img.data[i + 1] = Math.min(255, L * 255 * 0.98); img.data[i + 2] = Math.min(255, L * 255 * 0.82); img.data[i + 3] = 255;
+    }
+    q.putImageData(img, 0, 0); return c;
+  })();
+  const wallTexL = canvasTex(wallCanvas), wallTexR = canvasTex(wallCanvas);
+  wallTexR.wrapS = THREE.RepeatWrapping; wallTexR.repeat.x = -1; wallTexR.offset.x = 1;   /* the right wall runs the other way */
+  const cLeft = new THREE.Mesh(new THREE.PlaneGeometry(CL, CH), new THREE.MeshBasicMaterial({ map: wallTexL, toneMapped: false })); cLeft.rotation.y = Math.PI / 2; cLeft.position.set(-CW / 2, CH / 2, cz); d.add(cLeft);
+  const cRight = new THREE.Mesh(new THREE.PlaneGeometry(CL, CH), new THREE.MeshBasicMaterial({ map: wallTexR, toneMapped: false })); cRight.rotation.y = -Math.PI / 2; cRight.position.set(CW / 2, CH / 2, cz); d.add(cRight);
+  /* a dark polished floor that catches the two cove lines as soft streaks */
+  const floorCanvas = (() => {
+    const W = 128, H = 512, c = document.createElement("canvas"); c.width = W; c.height = H; const q = c.getContext("2d"), img = q.createImageData(W, H), n = fbm(256, 3, 32, 0.55);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const u = 1 - y / H, s = x / W, edge = Math.min(s, 1 - s);   /* canvas top is the far end */
+      const streak = Math.exp(-edge * 26) * 0.22 + Math.exp(-edge * 7) * 0.035, f = fadeAt(u);
+      const grain = (n[(y % 256) * 256 + (x * 2 % 256)] - 0.5) * 0.02;
+      const L = Math.max(0, 0.014 + (streak + grain) * f);
+      const i = (y * W + x) * 4; img.data[i] = Math.min(255, L * 255 * 1.1); img.data[i + 1] = Math.min(255, L * 255); img.data[i + 2] = Math.min(255, L * 255 * 0.85); img.data[i + 3] = 255;
+    }
+    q.putImageData(img, 0, 0); return c;
+  })();
+  const cFloor = new THREE.Mesh(new THREE.PlaneGeometry(CW, CL), new THREE.MeshBasicMaterial({ map: canvasTex(floorCanvas), toneMapped: false }));
+  cFloor.rotation.x = -Math.PI / 2; cFloor.position.set(0, 0.001, cz); d.add(cFloor);
+  const black = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x060606).convertSRGBToLinear(), toneMapped: false, side: THREE.DoubleSide });
+  const cCeil = new THREE.Mesh(new THREE.PlaneGeometry(CW, CL), black); cCeil.rotation.x = Math.PI / 2; cCeil.position.set(0, CH, cz); d.add(cCeil);
+  const cBack = new THREE.Mesh(new THREE.PlaneGeometry(CW, CH), black); cBack.position.set(0, CH / 2, z1); d.add(cBack);
+  /* the cove lines themselves: thin warm strips at the foot of each wall, dimming into the dark */
+  const coveCanvas = document.createElement("canvas"); coveCanvas.width = 4; coveCanvas.height = 256;
+  { const q = coveCanvas.getContext("2d"), gr = q.createLinearGradient(0, 256, 0, 0); for (let k = 0; k <= 10; k++) { const u = k / 10; gr.addColorStop(u, `rgba(196,160,116,${(fadeAt(u) * 0.9).toFixed(3)})`); } q.fillStyle = gr; q.fillRect(0, 0, 4, 256); }
+  const coveTex = canvasTex(coveCanvas);
+  [-1, 1].forEach(sd => { const s = new THREE.Mesh(new THREE.PlaneGeometry(0.018, CL), new THREE.MeshBasicMaterial({ map: coveTex, transparent: true, toneMapped: false, depthWrite: false })); s.rotation.x = -Math.PI / 2; s.position.set(sd * (CW / 2 - 0.015), 0.003, cz); d.add(s); });
+  /* the corridor side of the doorway wall, so looking back from inside shows a wall with the door in it */
+  const fMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0x121110).convertSRGBToLinear(), toneMapped: false }), sideW = (CW - DW) / 2;
+  [[-(DW / 2 + sideW / 2), sideW, CH, CH / 2], [DW / 2 + sideW / 2, sideW, CH, CH / 2], [0, DW, CH - DH, (DH + CH) / 2]].forEach(([x, w, h, y]) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), fMat); m.rotation.y = Math.PI; m.position.set(x, y, z0); d.add(m); });
+  [cLeft, cRight, cBack].forEach(m => solids.push(m));
+  /* one colour, one material: a matt painted finish with a faint roller texture, for the frame, the leaf and the handle alike */
+  const doorN = fbm(256, 3, 12, 0.55), doorFine = fbm(256, 2, 96, 0.5), doorStreak = fbm(256, 2, 6, 0.5, 10);
+  const doorMap = toTex(256, i => { const v = (0.118 + (doorN[i] - 0.5) * 0.016 + (doorFine[i] - 0.5) * 0.012 + (doorStreak[i] - 0.5) * 0.01) * 255; return [v * 1.02, v, v * 0.97]; }, true);
+  const doorRough = toTex(256, i => { const r = (0.62 + (doorN[i] - 0.5) * 0.2 + (doorFine[i] - 0.5) * 0.18) * 255; return [r, r, r]; }, false);
+  const doorBump = toTex(256, i => { const h = (0.5 + (doorFine[i] - 0.5) * 0.7 + (doorStreak[i] - 0.5) * 0.3) * 255; return [h, h, h]; }, false);
+  const doorMat = new THREE.MeshStandardMaterial({ map: doorMap, roughnessMap: doorRough, bumpMap: doorBump, bumpScale: 0.0005, roughness: 1, metalness: 0, envMap: lampBlack.envMap, envMapIntensity: 0.2 });
+  /* a slim frame around the opening, standing a few millimetres off the wall */
+  [[-DW / 2 - 0.03, DH / 2 + 0.03, 0.06, DH + 0.06], [DW / 2 + 0.03, DH / 2 + 0.03, 0.06, DH + 0.06], [0, DH + 0.03, DW + 0.12, 0.06]].forEach(([x, y, w, h]) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.018), doorMat); m.position.set(x, y, 0.009); d.add(m);
+  });
+  /* the leaf: a flush door on concealed hinges, open towards the visitor */
+  const LW = DW - 0.006, LH = DH - 0.008, LT = 0.044;
+  const leafGeo = new THREE.BoxGeometry(LW, LH, LT); leafGeo.translate(-LW / 2, LH / 2, -LT / 2);
+  const leaf = new THREE.Mesh(leafGeo, doorMat);
+  const hingeAt = new THREE.Group(); hingeAt.position.set(DW / 2 - 0.003, 0.004, 0); hingeAt.rotation.y = 1.2; d.add(hingeAt); hingeAt.add(leaf);
+  /* a plain lever handle in the same colour, on both faces */
+  [1, -1].forEach(sd => {
+    const z = sd > 0 ? 0 : -LT;
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.05, 16), doorMat); neck.rotation.x = Math.PI / 2; neck.position.set(-LW + 0.07, 1.02, z + sd * 0.025); hingeAt.add(neck);
+    const lever = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.018, 0.018), doorMat); lever.position.set(-LW + 0.07 + 0.055, 1.02, z + sd * 0.05); hingeAt.add(lever);
+  });
+  /* the light that slips out: a soft wedge on the floor, and a faint glow on the dark wall beside the opening */
+  const wedgeTex = (() => { const c = document.createElement("canvas"); c.width = 256; c.height = 512; const q = c.getContext("2d");
+    const gr = q.createLinearGradient(0, 0, 0, 512); gr.addColorStop(0, "rgba(255,236,206,0.9)"); gr.addColorStop(0.4, "rgba(255,230,196,0.28)"); gr.addColorStop(1, "rgba(255,226,190,0)");
+    q.fillStyle = gr; q.beginPath(); q.moveTo(70, 0); q.lineTo(190, 0); q.lineTo(256, 512); q.lineTo(0, 512); q.closePath(); q.fill(); return canvasTex(c); })();
+  const wedge = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 2.4), new THREE.MeshBasicMaterial({ map: wedgeTex, transparent: true, opacity: 0.12, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+  wedge.rotation.x = -Math.PI / 2; wedge.rotation.z = -0.32; wedge.position.set(-0.32, 0.004, 1.2); d.add(wedge);
+  const halo = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.8), new THREE.MeshBasicMaterial({ map: softRect("#ffe6c4", 60, 50), transparent: true, opacity: 0.05, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+  halo.position.set(-0.55, 1.2, 0.004); d.add(halo);
+  [leaf].forEach(m => { m.userData = { type: "loopdoor" }; clickables.push(m); });
+  /* the words beside the door, light on the dark wall */
+  const w = 1.25, h = 0.14, words = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: signTexture([{ text: "Same workout. Next week.", font: `400 56px ${SANS}`, size: 56, color: "#bdb4a7" }], Math.round(w * 600), Math.round(h * 600)), transparent: true, toneMapped: false, opacity: 0.85 }));
+  words.position.set(-DW / 2 - 0.25 - w / 2, 1.55, 0.004); d.add(words);
+  g.updateMatrixWorld(true);
+  const L = new THREE.RectAreaLight(0xffe2bf, 0, 0.5, DH * 0.9);
+  L.position.copy(d.localToWorld(new THREE.Vector3(-0.25, DH / 2, 0.05))); scene.add(L); L.lookAt(d.localToWorld(new THREE.Vector3(-0.9, DH / 2 - 0.5, 2)));
+  staticRects.push({ light: L, power: 0.3 });
+  LOOP.at = d.localToWorld(new THREE.Vector3(-0.1, 0, 0));
+  LOOP.end = d.localToWorld(new THREE.Vector3(0, 0, z0 - 6.8));   /* a few steps into the dark */
+}
+function loopToStart() {
+  if (LOOP.busy) return; LOOP.busy = true;
+  const fade = document.getElementById("fade");
+  if (typeof tourSetAuto === "function") tourSetAuto(false);
+  if (tour.on) leaveTour();
+  closePanel(); closeGuestbook(); fade.classList.add("on");
+  setTimeout(() => {
+    keys.clear(); joyMove.fw = joyMove.sd = 0; vel.set(0, 0, 0);
+    mode = "route"; tween = null; tourAnim = null; routeP = routeTarget = 0; captionKey = ""; updateUI();
+    setTimeout(() => { fade.classList.remove("on"); LOOP.busy = false; }, 500);
+  }, 1000);
+}
 function exitSign() {
   const c = document.createElement("canvas"); c.width = 420; c.height = 150; const x = c.getContext("2d");
   x.fillStyle = "#138a4c"; x.fillRect(0, 0, 420, 150);
@@ -2364,7 +2825,10 @@ if (last) {
   plane(x1 - x0, DEPTH, (x0 + x1) / 2, CEIL, DEPTH / 2, 0, Math.PI / 2);            /* ceiling */
   plane(x1 - x0, CEIL, (x0 + x1) / 2, CEIL / 2, 0, 0);                               /* side walls */
   plane(x1 - x0, CEIL, (x0 + x1) / 2, CEIL / 2, DEPTH, Math.PI);
-  plane(DEPTH, CEIL, x1, CEIL / 2, DEPTH / 2, -Math.PI / 2);                         /* far wall */
+  { /* far wall, with the doorway to the corridor cut into it (see buildLoopDoor) */
+    const a0 = LOOP_DOOR.z - LOOP_DOOR.w / 2, a1 = LOOP_DOOR.z + LOOP_DOOR.w / 2, dH = LOOP_DOOR.h;
+    plane(a0, CEIL, x1, CEIL / 2, a0 / 2, -Math.PI / 2); plane(DEPTH - a1, CEIL, x1, CEIL / 2, (a1 + DEPTH) / 2, -Math.PI / 2); plane(a1 - a0, CEIL - dH, x1, (dH + CEIL) / 2, LOOP_DOOR.z, -Math.PI / 2);
+  }
   plane(W0, CEIL, x0 + 0.001, CEIL / 2, W0 / 2, Math.PI / 2);                         /* back of the doorway wall, dark side */
   plane(DEPTH - W1, CEIL, x0 + 0.001, CEIL / 2, (W1 + DEPTH) / 2, Math.PI / 2);
   plane(W1 - W0, CEIL - DH, x0 + 0.001, (DH + CEIL) / 2, (W0 + W1) / 2, Math.PI / 2);
@@ -2378,6 +2842,8 @@ if (last) {
   sign.position.set(x1 - 0.01, 2.4, DEPTH / 2); sign.rotation.y = -Math.PI / 2; g.add(sign);
   sign.userData = { type: "sources" }; clickables.push(sign);
   g.updateMatrixWorld(true);
+  try { buildGuestbook(g, x0, x1); } catch (err) { console.warn("guestbook", err); }
+  try { buildLoopDoor(g, x0, x1); } catch (err) { console.warn("loop door", err); }
   /* one spotlight on the words from a real fitting on the dark ceiling: a black can on a short stem,
      set back from the wall so the pool is soft and even over the whole text, with only a faint beam in the air */
   const lampAt = g.localToWorld(new THREE.Vector3(x1 - 3.1, CEIL - 0.32, DEPTH / 2));
@@ -2622,6 +3088,8 @@ function blocked(dx, dz) {
   colRay.set(colO, colD); colRay.far = len + MARGIN;
   return colRay.intersectObjects(solids, false).length > 0;
 }
+let lastWalk = -1e9;
+setInterval(() => { document.body.classList.toggle("moving", mode === "free" && performance.now() - lastWalk < 900); }, 120);
 function freeStep(dt) {
   const fx = -Math.sin(view.yaw), fz = -Math.cos(view.yaw), rx = Math.cos(view.yaw), rz = -Math.sin(view.yaw);
   let fw = 0, sd = 0;
@@ -2640,10 +3108,12 @@ function freeStep(dt) {
     else { dx = dz = 0; vel.set(0, 0, 0); }
   }
   view.pos.x += dx; view.pos.z += dz;
+  if (Math.hypot(vel.x, vel.z) > WALK * 0.35) lastWalk = performance.now();
   const kl = 1 - Math.exp(-dt * 12);
   view.yaw += (yawT - view.yaw) * kl;
   view.pitch += (pitchT - view.pitch) * kl;
   routeP = routeTarget = nearestStop();
+  if (LOOP.end && !LOOP.busy && Math.hypot(view.pos.x - LOOP.end.x, view.pos.z - LOOP.end.z) < 0.8) loopToStart();   /* the end of the corridor: back to the entrance */
 }
 function goToStop(n) {
   n = clampP(n);
@@ -2664,7 +3134,7 @@ function goToStop(n) {
    The visitor reads in their own time; nothing moves until Continue. The camera glides calmly along the route,
    through every stop in between, at a walking pace. */
 const tour = { on: false, i: 0, steps: [] };
-let tourAnim = null, tourWanted = false;
+let tourAnim = null, tourWanted = false, tourDrift = 0;
 const tourbar = document.getElementById("tourbar"), tourWhere = document.getElementById("tourWhere");
 const tourBack = document.getElementById("tourBack"), tourNext = document.getElementById("tourNext");
 /* the curator's notes: one or two sentences at each stop of the tour (checked against the captions) */
@@ -2691,81 +3161,93 @@ const CURATOR = {
   ],
   exit: "You knew the feeling. Now you know why."
 };
+/* the guided tour: one stop per collection, not per work; anyone who wants every work can open them all from there */
 function buildTour() {
-  tour.steps = [{ stop: 1, kind: "about", note: ABOUT.hook }];
+  tour.steps = [{ stop: 1, kind: "about", hall: 0, note: ABOUT.hook }];
   walls.forEach((w, c) => {
     if (w.inHall === 0 && w.hall > 0) {
       const r = stops.findIndex(st => st.kind === "rotunda" && st.hall === w.hall);
       if (r >= 0) tour.steps.push({ stop: r, kind: "rotunda", hall: w.hall, note: HALLS[w.hall].lede });
     }
-    tour.steps.push({ stop: textStopOf[c], c, kind: "text", note: w.hook });
-    tour.steps.push({ stop: worksStopOf[c], c, kind: "works", note: CURATOR.walls[w.name] || "" });
-    /* then along the line, work by work, left to right: its title and the description from its plaque;
-       a work with a story gets one more stop for it */
-    const ds = w.details || [];
-    ds.forEach((d, n) => {
-      const p = w.photos[d.k];
-      tour.steps.push({ stop: d.stop, c, k: d.k, kind: "work", n: n + 1, of: ds.length, title: p.title, note: p.desc });
-      if (p.context) tour.steps.push({ stop: d.stop, c, k: d.k, kind: "context", era: p.era || p.context.title, note: p.context.text });
-    });
-    if (!ds.length) w.photos.forEach((p, k) => { if (p.context) tour.steps.push({ stop: worksStopOf[c], c, kind: "context", era: p.era || p.context.title, note: p.context.text }); });
+    tour.steps.push({ stop: worksStopOf[c], c, kind: "coll", hall: w.hall, note: CURATOR.walls[w.name] || "" });
     if (CURATOR.pairs[w.name]) {
       const ps = stops.findIndex(st => st.kind === "inter" && st.bay === c && INTERLUDES[st.inter].pairOf === w.name);
-      tour.steps.push({ stop: ps >= 0 ? ps : worksStopOf[c], c, kind: "pair", note: CURATOR.pairs[w.name] });
+      if (ps >= 0) tour.steps.push({ stop: ps, c, kind: "pair", hall: w.hall, note: CURATOR.pairs[w.name] });
     }
     const is = stops.findIndex(st => st.kind === "inter" && st.bay === c && !INTERLUDES[st.inter].pairOf);
-    if (is >= 0) tour.steps.push({ stop: is, c, kind: "inter", note: CURATOR.inter[w.hall] || "" });
+    if (is >= 0 && CURATOR.inter[w.hall]) tour.steps.push({ stop: is, c, kind: "inter", hall: w.hall, note: CURATOR.inter[w.hall] });
     const vs = stops.findIndex(st => st.kind === "video" && st.bay === c);
-    if (vs >= 0) tour.steps.push({ stop: vs, kind: "video", note: PROJ.note });
+    if (vs >= 0) tour.steps.push({ stop: vs, kind: "video", hall: w.hall, note: PROJ.note });
     const ks = stops.findIndex(st => st.kind === "kiosk" && st.bay === c);
-    if (ks >= 0) tour.steps.push({ stop: ks, kind: "kiosk", note: "A touchscreen: a body that keeps training and one that does not, from 20 to 80. Open it and move the slider." });
+    if (ks >= 0) tour.steps.push({ stop: ks, kind: "kiosk", hall: w.hall, note: "A touchscreen: a body that keeps training and one that does not, from 20 to 80. Open it and move the slider." });
   });
-  tour.steps.push({ stop: LAST(), kind: "exit", note: CURATOR.exit });
+  tour.steps.push({ stop: LAST(), kind: "exit", hall: 2, note: CURATOR.exit });
 }
 function tourGo(i) {
   closePanel();
   tour.i = THREE.MathUtils.clamp(i, 0, tour.steps.length - 1);
   glideTo(tour.steps[tour.i].stop);
+  tourAuto.t = 0;
   updateTourBar();
 }
 function glideTo(stop) {
   if (mode !== "route") { mode = "route"; tween = null; }
   const from = routeP, d = Math.abs(stop - from);
-  tourAnim = { from, to: stop, start: performance.now(), ms: reduceMotion ? 0 : THREE.MathUtils.clamp(d * 1700, 1400, 6500) };
+  tourAnim = { from, to: stop, start: performance.now(), ms: reduceMotion ? 0 : THREE.MathUtils.clamp(d * 900, 1400, 4200) };
   routeTarget = stop;
 }
+function tourText(st) {
+  if (st.kind === "about") return { where: "Entrance", ttl: ABOUT.name, sub: "" };
+  if (st.kind === "rotunda") return { where: hallLabel(st.hall), ttl: HALLS[st.hall].name, sub: "" };
+  if (st.kind === "exit") return { where: "End of the visit", ttl: "Thank you", sub: "" };
+  if (st.kind === "video") return { where: `${hallLabel(st.hall)} · on the screen`, ttl: PROJ.title, sub: "" };
+  if (st.kind === "kiosk") return { where: `${hallLabel(st.hall)} · interactive`, ttl: "The long run", sub: "" };
+  const w = walls[st.c];
+  if (st.kind === "pair") return { where: `${hallLabel(w.hall)} · ${w.name}`, ttl: (PAIR_LABELS[w.name] || ["Then", "now"]).join(" → "), sub: "" };
+  if (st.kind === "inter") return { where: hallLabel(w.hall), ttl: "Between the collections", sub: "" };
+  return { where: `${hallLabel(w.hall)} · ${w.inHall + 1} of ${HALLS[w.hall].items.length}`, ttl: w.name, sub: w.hook || "" };
+}
 function updateTourBar() {
-  const st = tour.steps[tour.i], last = tour.i === tour.steps.length - 1;
-  let where;
-  if (st.kind === "about") where = `${esc(HALLS[0].name)} · <b>${esc(ABOUT.name)}</b>`;
-  else if (st.kind === "rotunda") where = `Hall ${HALLS[st.hall].id} · <b>${esc(HALLS[st.hall].name)}</b>`;
-  else if (st.kind === "exit") where = `<b>End of the visit</b>`;
-  else if (st.kind === "video") where = `${esc(HALLS[0].name)} · <b>${esc(PROJ.title)}</b> · on the screen`;
-  else if (st.kind === "kiosk") where = `${esc(HALLS[2].name)} · <b>The long run</b> · on the screen`;
-  else {
-    const w = walls[st.c], lab = PAIR_LABELS[w.name];
-    const part = st.kind === "text" ? "the text" : st.kind === "works" ? "the lead work" : st.kind === "work" ? `work ${st.n} of ${st.of}` : st.kind === "pair" ? (lab ? lab.join(" → ").toLowerCase() : "then and now") : st.kind === "context" ? st.era.toLowerCase() : "between the collections";
-    where = `${esc(HALLS[w.hall].name)} · <b>${esc(w.name)}</b> · ${esc(part)}`;
-  }
-  tourWhere.innerHTML = where;
+  const st = tour.steps[tour.i], last = tour.i === tour.steps.length - 1, T = tourText(st);
+  tourWhere.textContent = T.where;
   document.getElementById("tourCount").textContent = `${tour.i + 1} / ${tour.steps.length}`;
-  const noteEl = document.getElementById("tourNote");
-  if (st.kind === "work") noteEl.innerHTML = `<span class="wt">${esc(st.title)}</span>${esc(st.note || "")}`;
-  else noteEl.textContent = st.note || "";
+  /* the progress line: one segment per stop, a wider gap where a new hall begins; a segment can be clicked */
+  const prog = document.getElementById("tourProg");
+  if (prog.childElementCount !== tour.steps.length) {
+    prog.innerHTML = tour.steps.map((s, n) => `<i data-n="${n}"${n && s.hall !== tour.steps[n - 1].hall ? ' class="gap"' : ""}></i>`).join("");
+    prog.querySelectorAll("i").forEach(el => el.addEventListener("click", () => tourGo(+el.dataset.n)));
+  }
+  prog.querySelectorAll("i").forEach((el, n) => { el.classList.toggle("done", n < tour.i); el.classList.toggle("cur", n === tour.i); });
+  /* the words fade out and back in, so each stop feels like a new page */
+  const body = document.getElementById("tourBody");
+  body.classList.add("swap");
+  clearTimeout(updateTourBar.t);
+  updateTourBar.t = setTimeout(() => {
+    document.getElementById("tourTitle").textContent = T.ttl;
+    document.getElementById("tourSub").textContent = T.sub;
+    document.getElementById("tourNote").textContent = st.note || "";
+    body.classList.remove("swap");
+  }, 220);
   tourBack.disabled = tour.i === 0;
   const readBtn = document.getElementById("tourRead");
-  readBtn.hidden = !(st.kind === "text" || st.kind === "about" || st.kind === "work" || st.kind === "kiosk");
-  readBtn.textContent = st.kind === "work" ? "See it large" : st.kind === "kiosk" ? "Open the screen" : "Read the text";
+  readBtn.hidden = !(st.kind === "coll" || st.kind === "about" || st.kind === "kiosk" || st.kind === "exit");
+  readBtn.textContent = st.kind === "kiosk" ? "Open the screen" : st.kind === "exit" ? "Sign the guestbook" : "Read the text";
+  const allBtn = document.getElementById("tourAll");
+  allBtn.hidden = st.kind !== "coll";
+  if (st.kind === "coll") allBtn.textContent = `See all ${walls[st.c].photos.length} works`;
+  const nh = tour.steps.findIndex((s, n) => n > tour.i && s.hall > st.hall);
+  document.getElementById("tourSkip").hidden = nh < 0;
   tourNext.textContent = last ? "Finish the tour" : "Continue →";
 }
 function startTour() {
   buildTour(); tour.on = true; tour.paused = false; tour.i = 0;
   document.body.classList.add("tour"); tourbar.hidden = false;
   updateTourBar();
+  setTimeout(showPhotoHint, 4000);
 }
 function leaveTour() {
   if (!tour.on) return;
-  tour.on = false; tour.paused = false; tourAnim = null; tourResume.hidden = true;
+  tour.on = false; tour.paused = false; tourAnim = null; tourResume.hidden = true; tourSetAuto(false);
   document.body.classList.remove("tour"); tourbar.hidden = true;
   captionKey = ""; updateUI();
 }
@@ -2776,8 +3258,30 @@ function tourNextStep() {
 tourNext.addEventListener("click", tourNextStep);
 tourBack.addEventListener("click", () => tourGo(tour.i - 1));
 document.getElementById("tourLeave").addEventListener("click", leaveTour);
+document.getElementById("tourSkip").addEventListener("click", () => { const h = tour.steps[tour.i].hall, n = tour.steps.findIndex((s, k) => k > tour.i && s.hall > h); if (n >= 0) tourGo(n); });
+document.getElementById("tourAll").addEventListener("click", () => { const st = tour.steps[tour.i]; if (st.kind === "coll") { tourSetAuto(false); focusPhoto(st.c, 0); } });
 /* the wall text, set large in the side panel, for anyone who would rather read it close up */
-document.getElementById("tourRead").addEventListener("click", () => { const st = tour.steps[tour.i]; if (st.kind === "about") openAbout(); else if (st.kind === "kiosk") openKiosk(); else if (st.kind === "work") focusPhoto(st.c, st.k); else if (st.c !== undefined) openText(st.c); });
+document.getElementById("tourRead").addEventListener("click", () => { const st = tour.steps[tour.i]; tourSetAuto(false); if (st.kind === "about") openAbout(); else if (st.kind === "kiosk") openKiosk(); else if (st.kind === "exit") openGuestbook(); else if (st.c !== undefined) openText(st.c); });
+/* autoplay, like an audio guide: each stop stays long enough to read its words, then the tour moves on by itself.
+   It waits while a text, a work or a screen is open, and stops at the last stop. */
+const tourAuto = { on: false, t: 0, last: 0 };
+function tourSetAuto(on) {
+  tourAuto.on = on; tourAuto.t = 0; tourAuto.last = performance.now();
+  document.getElementById("tourIco").setAttribute("d", on ? "M13 11.5h3.5v13H13zM19.5 11.5H23v13h-3.5z" : "M14.5 11.5v13l10-6.5z");
+  document.getElementById("tourPlay").setAttribute("aria-label", on ? "Pause autoplay" : "Play the tour automatically");
+  document.getElementById("tourArc").style.strokeDashoffset = 100.5;
+}
+document.getElementById("tourPlay").addEventListener("click", () => tourSetAuto(!tourAuto.on));
+setInterval(() => {
+  const now = performance.now(), dt = now - tourAuto.last; tourAuto.last = now;
+  if (!tourAuto.on || !tour.on || tour.paused) return;
+  const busy = tourAnim || panel.classList.contains("open") || !lb.hidden || !kioskEl.hidden || !guestEl.hidden;
+  if (busy) return;
+  const st = tour.steps[tour.i], dur = THREE.MathUtils.clamp(5500 + (st.note || "").length * 42, 7000, 14000);
+  tourAuto.t += dt;
+  document.getElementById("tourArc").style.strokeDashoffset = 100.5 * (1 - Math.min(1, tourAuto.t / dur));
+  if (tourAuto.t >= dur) { if (tour.i < tour.steps.length - 1) tourGo(tour.i + 1); else tourSetAuto(false); }
+}, 100);
 /* switching from the free visit to the guided tour at any time: it picks up at the stop nearest to the visitor */
 document.getElementById("tourTop").addEventListener("click", () => {
   if (!document.body.classList.contains("inside")) return;
@@ -2891,7 +3395,7 @@ renderer.domElement.addEventListener("pointermove", e => {
     return;
   }
   const hit = pick(e), type = hit && hit.object.userData.type;
-  stage.classList.toggle("point", type === "photo" || type === "text" || type === "about" || type === "sources" || type === "context" || type === "kiosk");
+  stage.classList.toggle("point", type === "photo" || type === "text" || type === "about" || type === "sources" || type === "context" || type === "kiosk" || type === "guestbook" || type === "loopdoor");
 });
 renderer.domElement.addEventListener("pointercancel", () => { kioskDrag = null; });
 renderer.domElement.addEventListener("pointerup", e => {
@@ -2908,6 +3412,8 @@ renderer.domElement.addEventListener("pointerup", e => {
   else if (u.type === "sources") openSources();
   else if (u.type === "context") openContext(walls[u.wall].photos[u.photo]);
   else if (u.type === "kiosk") openKiosk();
+  else if (u.type === "guestbook") openGuestbook();
+  else if (u.type === "loopdoor") loopToStart();
 });
 
 /* ---------------- UI ---------------- */
@@ -2940,57 +3446,23 @@ function setCaption(kicker, titleHTML, acts) {
 function updateUI() {
   if (!stops.length) return;
   const si = stopIndex(), s = stops[si];
-  const key = `${si}-${mode === "focus"}`;
+  /* walking freely, the caption only says where you are: the hall and the collection, never the single works
+     and no route links (the guided tour and the ← → arrows do the guiding) */
+  let cap;
+  if (s.kind === "foyer") cap = ["Entrance · Temporary exhibition", "Body Moves", []];
+  else if (s.kind === "about") cap = [ABOUT.kicker, esc(ABOUT.name), [["Read the text", openAbout], ...(PULSE_ENABLED ? [[pulseOn ? "Pulse on · turn off" : "Track my pulse ♥", () => setPulse(!pulseOn)]] : [])]];
+  else if (s.kind === "rotunda") cap = [hallLabel(s.hall), esc(HALLS[s.hall].name), []];
+  else if (s.kind === "inter") { const it = INTERLUDES[s.inter], pw = it.pairOf && walls.find(w => w.name === it.pairOf); cap = pw ? [`${hallLabel(pw.hall)} · ${pw.inHall + 1} of ${HALLS[pw.hall].items.length}`, esc(pw.name), [["Read the text", () => openText(pw.index)]]] : [hallLabel(s.hall), "Between the collections", []]; }
+  else if (s.kind === "kiosk") cap = [`${hallLabel(s.hall)} · interactive`, "The long run", [["Open the screen", openKiosk]]];
+  else if (s.kind === "video") cap = [`${hallLabel(s.hall)} · on the screen`, esc(PROJ.title), []];
+  else if (s.kind === "exit") cap = ["End of the visit", "Thank you", [["Sign the guestbook", openGuestbook], ["Sources & credits", openSources], ["Back to the start", loopToStart]]];
+  else { const w = walls[s.wall]; cap = [`${hallLabel(w.hall)} · ${w.inHall + 1} of ${HALLS[w.hall].items.length}`, esc(w.name), [["Read the text", () => openText(w.index)]]]; }
+  const key = cap[0] + "|" + cap[1];
   if (key !== captionKey) {
     captionKey = key;
     if (s.kind !== "about") hideAsk();
-    if (s.kind === "foyer") {
-      setCaption("Entrance · Temporary exhibition", `Body Moves`, [["Enter Hall I · Before →", () => goToStop(si + 1)]]);
-    } else if (s.kind === "about") {
-      setCaption(ABOUT.kicker, esc(ABOUT.name), [["Read the text", openAbout], ...(PULSE_ENABLED ? [[pulseOn ? "Pulse on · turn off" : "Track my pulse ♥", () => setPulse(!pulseOn)]] : []), [`Start with ${walls[0].name} →`, () => { closePanel(); goToStop(si + 1); }]]);
-      if (PULSE_ENABLED && !pulseAsked) { clearTimeout(askTimer); askTimer = setTimeout(() => { if (stops[stopIndex()].kind === "about") showAsk(); }, 900); }
-    } else if (s.kind === "rotunda") {
-      hideAsk();
-      const h = HALLS[s.hall];
-      setCaption(hallLabel(s.hall), esc(h.name),
-        [[`Enter the hall · ${h.items.length} collections →`, () => goToStop(si + 1)]]);
-} else if (s.kind === "inter") {
-  const it = INTERLUDES[s.inter], nx = stops[si + 1];
-  const go = !nx ? "Exit →" : nx.kind === "rotunda" ? `Next hall: ${HALLS[nx.hall].name} →` : nx.kind === "exit" ? "To the exit →" : nx.kind === "kiosk" ? "Next: the screen →" : nx.kind === "video" ? "Next: the screen →" : `Next: ${walls[nx.wall].name} →`;
-  if (it.pairOf) setCaption(`${hallLabel(s.hall)} · ${esc(it.pairOf)}`, esc((PAIR_LABELS[it.pairOf] || ["Then", "now"]).join(" → ")), [[go, () => { closePanel(); goToStop(si + 1); }]]);
-  else setCaption(`${hallLabel(s.hall)} · between the collections`, `${it.photos.length} more work${it.photos.length === 1 ? "" : "s"}`, [[go, () => { closePanel(); goToStop(si + 1); }]]);
-    } else if (s.kind === "kiosk") {
-      const nx = stops[si + 1];
-      setCaption(`${hallLabel(s.hall)} · interactive`, "The long run", [["Open the screen", openKiosk], [nx && nx.kind === "exit" ? "To the exit →" : "Continue →", () => { closePanel(); goToStop(si + 1); }]]);
-    } else if (s.kind === "video") {
-      const nx = stops[si + 1];
-      setCaption(`${hallLabel(s.hall)} · on the screen`, esc(PROJ.title), [[nx && nx.kind === "rotunda" ? `Next hall: ${HALLS[nx.hall].name} →` : nx && nx.wall !== undefined ? `Next: ${walls[nx.wall].name} →` : "Continue →", () => { closePanel(); goToStop(si + 1); }]]);
-    } else if (s.kind === "exit") {
-      setCaption("End of the visit", "Thank you", [["Sources & credits", openSources], ["Back to the start", () => { closePanel(); goToStop(0); }]]);
-    } else {
-      const w = walls[s.wall], h = HALLS[w.hall];
-      const pos = `${hallLabel(w.hall)} · ${w.inHall + 1} of ${h.items.length}`;
-      const nextW = walls[s.wall + 1];
-      const nextLabel = !nextW ? "Exit →" : nextW.hall !== w.hall ? `Next hall: ${HALLS[nextW.hall].name} →` : `Next: ${nextW.name} →`;
-      const nsi = skipTo(si + 1, 1), nxs = stops[nsi], turnLabel = nxs && nxs.kind === "inter" ? (INTERLUDES[nxs.inter].pairOf ? `Turn around: ${(PAIR_LABELS[INTERLUDES[nxs.inter].pairOf] || ["then and now"])[0].toLowerCase()} →` : "Turn around: more works →") : nxs && nxs.kind === "video" ? `Turn around: ${PROJ.title} →` : null;
-      const look = nxs && nxs.kind === "detail" ? `Look closer: ${nxs.era.toLowerCase()} →` : null;
-      if (s.kind === "detail") {
-        setCaption(`${pos} · ${esc(w.name)}`, esc(s.era || w.photos[s.k].title), [
-          ["Back to the collection", () => { closePanel(); goToStop(worksStopOf[w.index]); }],
-          [turnLabel || nextLabel, () => { closePanel(); goToStop(nsi); }]
-        ]);
-      } else if (s.kind === "text") {
-        setCaption(pos, esc(w.name), [
-          ["Read the text", () => openText(w.index)],
-          ["See the collection →", () => { closePanel(); goToStop(worksStopOf[w.index]); }]
-        ]);
-      } else {
-        setCaption(`${pos} · ${w.photos.length} works`, esc(w.name), [
-          ["Back to the text", () => { goToStop(textStopOf[w.index]); openText(w.index); }],
-          [look || turnLabel || nextLabel, () => { closePanel(); goToStop(nsi); }]
-        ]);
-      }
-    }
+    if (s.kind === "about" && PULSE_ENABLED && !pulseAsked) { clearTimeout(askTimer); askTimer = setTimeout(() => { if (stops[stopIndex()].kind === "about") showAsk(); }, 900); }
+    setCaption(cap[0], cap[1], cap[2]);
   }
   capEl.style.opacity = panel.classList.contains("open") && innerWidth < 760 ? "0" : "";
   roomLabel.textContent = s.kind === "foyer" ? "Entrance" : s.kind === "exit" ? "Exit" : hallLabel(s.hall);
@@ -3097,6 +3569,7 @@ addEventListener("blur", () => keys.clear());
 addEventListener("keydown", e => {
   if (!document.body.classList.contains("inside")) return;
   if (!kioskEl.hidden) { if (e.key === "Escape") closeKiosk(); return; }   /* the slider takes the arrow keys while the screen is open */
+  if (!guestEl.hidden) { if (e.key === "Escape") closeGuestbook(); return; }   /* typing in the book must not walk */
   if (!lb.hidden) {
     if (e.key === "Escape") closeLightbox();
     else if (e.key === "ArrowLeft" && lbAt && lbAt.k > 0) openWork(lbAt.photos, lbAt.k - 1, lbAt.label);
@@ -3270,6 +3743,9 @@ if (mode === "route" || mode === "enter") {
     if (Math.abs(routeTarget - routeP) < 1e-4) routeP = routeTarget;
     const p = poseAt(routeP);
     view.pos.copy(p.pos); view.yaw = p.yaw; view.pitch = p.pitch;
+    /* on a tour stop the camera breathes: a slow, slight drift while the visitor reads, like a documentary shot */
+    tourDrift += ((tour.on && !tour.paused && !tourAnim && !reduceMotion ? 1 : 0) - tourDrift) * (1 - Math.exp(-dt * 0.7));
+    if (tourDrift > 0.001) { view.yaw += Math.sin(now / 5200) * 0.014 * tourDrift; view.pitch += Math.sin(now / 7100 + 1.3) * 0.006 * tourDrift; }
   } else if (tween) {
     const t = tween.ms ? Math.min(1, (now - tween.start) / tween.ms) : 1, k = ease(t);
     view.pos.lerpVectors(tween.from.pos, tween.to.pos, k);
@@ -3302,6 +3778,7 @@ camera.position.copy(view.pos);
   }
   if (shadowsDirty) { renderer.shadowMap.needsUpdate = true; shadowsDirty = false; }   /* the lights and frames never move, so shadows are drawn only when the lit bay changes */
   if (composer) composer.render(); else renderer.render(scene, camera);
+  if (shotWanted) { shotWanted = false; takePhoto(); }   /* read the frame right after it is drawn */
   if (stops.length && pulseOn) updatePulse(dt, now);
   if (!document.body.classList.contains("inside") && !entryEl.classList.contains("gone")) placeEnterButton();
 }
@@ -3344,11 +3821,46 @@ function startEntry() {
   if (reduceMotion) { routeP = routeTarget = 1; finishEntry(); return; }
   enterStart = performance.now(); mode = "enter";
 }
+/* ---------------- photos: the camera button saves what the visitor sees, signed BODY MOVES in the corner ---------------- */
+let shotWanted = false, downloadsNS = null;
+/* inside the claude.ai viewer, files are handed over through its downloads capability; on the open web, a plain link */
+if (window.claude && typeof window.claude.use === "function") window.claude.use("downloads").then(n => { downloadsNS = n; }, () => {});
+function takePhoto() {
+  const src = renderer.domElement, W = src.width, H = src.height;
+  const c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d");
+  g.drawImage(src, 0, 0);
+  const k = H / 1000;
+  g.save(); g.shadowColor = "rgba(0,0,0,.45)"; g.shadowBlur = 14 * k;
+  g.fillStyle = "rgba(243,238,230,.92)"; g.textBaseline = "alphabetic";
+  g.font = `700 ${Math.round(40 * k)}px 'Barlow Condensed', 'Arial Narrow', sans-serif`; g.letterSpacing = `${(2 * k).toFixed(1)}px`;
+  g.fillText("BODY MOVES", 40 * k, H - 40 * k); g.restore();
+  const flash = document.getElementById("flash"); flash.classList.remove("go"); void flash.offsetWidth; flash.classList.add("go");
+  const t = new Date(), p = n => String(n).padStart(2, "0");
+  const name = `body-moves-photo-${t.getFullYear()}${p(t.getMonth() + 1)}${p(t.getDate())}-${p(t.getHours())}${p(t.getMinutes())}${p(t.getSeconds())}.jpg`;
+  c.toBlob(blob => {
+    if (!blob) return;
+    if (downloadsNS) { downloadsNS.save({ filename: name, data: blob }).catch(() => {}); return; }   /* the viewer may decline; nothing to retry */
+    const url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }, "image/jpeg", 0.92);
+}
+document.getElementById("photoBtn").addEventListener("click", () => { shotWanted = true; hidePhotoHint(); });
+/* the first time inside, a small note under the camera: photos are welcome */
+const photoHint = document.getElementById("photoHint");
+function hidePhotoHint() { photoHint.classList.remove("show"); setTimeout(() => { photoHint.hidden = true; }, 400); }
+function showPhotoHint() {
+  let seen = false; try { seen = localStorage.getItem("bm-photo-hint") === "1"; localStorage.setItem("bm-photo-hint", "1"); } catch (_) {}
+  if (seen) return;
+  photoHint.hidden = false; requestAnimationFrame(() => photoHint.classList.add("show"));
+  setTimeout(hidePhotoHint, 7000);
+}
 /* the first time inside: a short card on how to move, gone after 6 s or at the first move */
 const howto = document.getElementById("howto");
 let howtoTimer = 0;
 function showHowto() {
-  if (document.body.classList.contains("touch")) howto.querySelector("ul").innerHTML = "<li><b>Joystick</b> (bottom left) to walk</li><li><b>Drag</b> anywhere else to look around</li><li><b>Tap a work</b> to see it large</li><li><b>← →</b> to jump from stop to stop</li>";
+  setTimeout(showPhotoHint, 6500);   /* after the walking card has gone */
+  if (document.body.classList.contains("touch")) howto.querySelector("ul").innerHTML = "<li><b>Joystick</b> (bottom left) to walk</li><li><b>Drag</b> anywhere else to look around</li><li><b>Tap a work</b> to see it large</li><li><b>← →</b> to jump from stop to stop</li><li><b>Camera</b> (top right) to take a photo</li>";
   howto.hidden = false; requestAnimationFrame(() => howto.classList.add("show"));
   howtoTimer = setTimeout(hideHowto, 6000);
   ["pointerdown", "wheel", "keydown"].forEach(ev => addEventListener(ev, hideHowto, { once: true, passive: true }));
