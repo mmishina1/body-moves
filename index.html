@@ -204,6 +204,30 @@ body.touch #caption { bottom: calc(232px + env(safe-area-inset-bottom, 0px)); }
   body.touch #caption { bottom: calc(184px + env(safe-area-inset-bottom, 0px)); }
 }
 
+/* the touchscreen kiosk in Hall III: opens as a screen with a dark bezel over the room */
+#kiosk { position: fixed; inset: 0; z-index: 28; display: grid; place-items: center; background: rgba(10,9,8,.86); opacity: 0; transition: opacity .3s ease; padding: 16px; box-sizing: border-box; }
+#kiosk[hidden] { display: none; }
+#kiosk.open { opacity: 1; }
+#kiosk .bezel { width: min(980px, 100%); max-height: 100%; overflow: auto; background: #0b0c0e; border-radius: 22px; padding: 14px; box-shadow: 0 30px 90px rgba(0,0,0,.6); box-sizing: border-box; }
+#kiosk .scr { background: radial-gradient(120% 90% at 50% 0%, #1b2230 0%, #10141c 70%); border-radius: 12px; padding: 26px 28px 22px; color: #efe8dc; font-family: "Libre Franklin", var(--font-sans); position: relative; }
+#kiosk .k { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: #9fa6b4; }
+#kiosk h2 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 5vw, 46px); line-height: 1; text-transform: uppercase; margin: 8px 0 10px; letter-spacing: .01em; }
+#kiosk .lead { font-size: 15px; line-height: 1.5; color: #cfd3da; max-width: 62ch; margin: 0 0 16px; }
+#kiosk .age { display: flex; align-items: center; gap: 14px; margin: 4px 0 14px; }
+#kiosk .age b { font: 600 26px/1 "Libre Franklin", var(--font-sans); min-width: 3.6em; color: #fff; }
+#kiosk input[type=range] { flex: 1; accent-color: #e5675a; height: 28px; }
+#kiosk .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+#kiosk .col { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: 12px 12px 10px; text-align: center; }
+#kiosk .col h3 { font: 600 13px/1.3 "Libre Franklin", var(--font-sans); margin: 0 0 6px; color: #efe8dc; letter-spacing: .01em; }
+#kiosk canvas { width: 100%; max-width: 330px; height: auto; display: block; margin: 0 auto; }
+#kiosk .val { font-size: 13px; color: #cfd3da; margin-top: 4px; }
+#kiosk .val b { color: #fff; font-weight: 600; }
+#kiosk .legend { display: flex; gap: 16px; justify-content: center; font-size: 12px; color: #9fa6b4; margin: 12px 0 6px; }
+#kiosk .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+#kiosk .note { font-size: 12px; line-height: 1.55; color: #9fa6b4; margin: 8px 0 0; max-width: 80ch; }
+#kiosk .close { position: absolute; top: 14px; right: 14px; width: 40px; height: 40px; padding: 0; border-radius: 50%; display: grid; place-items: center; font: 300 24px/1 var(--font-sans); color: #efe8dc; border-color: rgba(255,255,255,.25); background: transparent; }
+@media (max-width: 640px) { #kiosk .scr { padding: 20px 14px 16px; } #kiosk .cols { gap: 8px; grid-template-columns: 1fr; } #kiosk .col { padding: 8px 6px; } #kiosk .lead { font-size: 14px; } }
+
 /* entrance: the museum itself is the opening; one restrained button stands in front of the doorway */
 #entry { position: fixed; z-index: 10; left: 50%; top: 80%; transform: translate(-50%, -50%); transition: opacity .7s ease; }
 #entry.gone { opacity: 0; pointer-events: none; }
@@ -312,6 +336,20 @@ body.inside #top, body.inside #caption, body.inside #route { opacity: 1; pointer
   </div>
 </div>
 
+<div id="kiosk" role="dialog" aria-modal="true" aria-labelledby="kioskTitle" hidden>
+  <div class="bezel"><div class="scr">
+    <button class="close" type="button" aria-label="Close the screen">×</button>
+    <h2 id="kioskTitle">The long run</h2>
+    <p class="lead">Muscle is not fixed. Move the slider through the years and compare a body that keeps training with one that does not.</p>
+    <div class="age"><b id="kioskAge">Age 20</b><input id="kioskSlider" type="range" min="20" max="80" step="1" value="20" aria-label="Age"></div>
+    <div class="cols">
+      <div class="col"><h3>Regular strength training</h3><canvas id="kioskA" width="400" height="400"></canvas><div class="val" id="kioskValA"></div></div>
+      <div class="col"><h3>No training</h3><canvas id="kioskB" width="400" height="400"></canvas><div class="val" id="kioskValB"></div></div>
+    </div>
+    <div class="legend"><span><i style="background:#c8574c"></i>muscle</span><span><i style="background:#e9dcc3"></i>fat</span><span><i style="background:#f4f1ea"></i>bone</span></div>
+    <p class="note">Each image is a slice through the middle of the thigh, front at the top: muscle, the thigh bone, and fat under the skin. An illustrative model, not a forecast for one person.<br><br>With age, adults lose about 0.4–0.5% of their muscle mass a year, and around 75 the loss speeds up to about 0.6–1% a year. Strength falls two to five times faster than muscle.<br><br>Strength training does not stop this, but it changes how much is kept. Men in their seventies and eighties who had been strength athletes for decades had less muscle in their arms and legs than young strength athletes, yet about a sixth more than men of their age who did no regular training. People around retirement age who lifted heavy weights three times a week for a year still had the same maximal leg strength four years after they started, while those who did not train had grown weaker; their leg muscle, though, still shrank, as it did in everyone. Even at 75 and over, strength training still builds both strength and muscle.<br><br>Sources: Mitchell et al., 2012; Walker et al., 2023; Bloch-Ibenfeldt et al., 2024; Grgic et al., 2020 (full references in the catalogue). No study has followed the same people from 20 to 80; both lines are drawn from these findings.</p>
+  </div></div>
+</div>
 <div id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lbTitle" hidden>
   <button class="lb-close" type="button" aria-label="Close">×</button>
   <button class="lb-nav lb-prev" type="button" aria-label="Previous work">←</button>
@@ -566,6 +604,7 @@ const REFERENCES = [
   ["Abernethy, P. J., Jürimäe, J., Logan, P. A., Taylor, A. W., & Thayer, R. E. (1994). Acute and chronic response of skeletal muscle to resistance exercise. *Sports Medicine*, 17(1), 22–38.", "https://pubmed.ncbi.nlm.nih.gov/8153497/"],
   ["Baker, J. S., McCormick, M. C., & Robergs, R. A. (2010). Interaction among skeletal muscle metabolic energy systems during intense exercise. *Journal of Nutrition and Metabolism*, 2010, 905612.", "https://pmc.ncbi.nlm.nih.gov/articles/PMC3005844/"],
   ["Bishop, D. (2003). Warm up I: Potential mechanisms and the effects of passive warm up on exercise performance. *Sports Medicine*, 33(6), 439–454.", "https://pubmed.ncbi.nlm.nih.gov/12744717/"],
+  ["Bloch-Ibenfeldt, M., Theil Gates, A., Karlog, K., Demnitz, N., Kjaer, M., & Boraxbekk, C. J. (2024). Heavy resistance training at retirement age induces 4-year lasting beneficial effects in muscle strength: A long-term follow-up of an RCT. *BMJ Open Sport & Exercise Medicine*, 10(2), e001899.", "https://doi.org/10.1136/bmjsem-2024-001899"],
   ["Cheung, K., Hume, P. A., & Maxwell, L. (2003). Delayed onset muscle soreness: Treatment strategies and performance factors. *Sports Medicine*, 33(2), 145–164.", "https://pubmed.ncbi.nlm.nih.gov/12617692/"],
   ["Damas, F., Phillips, S. M., Libardi, C. A., et al. (2016). Resistance training-induced changes in integrated myofibrillar protein synthesis are related to hypertrophy only after attenuation of muscle damage. *The Journal of Physiology*, 594(18), 5209–5222.", "https://pubmed.ncbi.nlm.nih.gov/27219125/"],
   ["Enoka, R. M., & Duchateau, J. (2008). Muscle fatigue: What, why and how it influences muscle function. *The Journal of Physiology*, 586(1), 11–23.", "https://pmc.ncbi.nlm.nih.gov/articles/PMC2375565/"],
@@ -576,6 +615,7 @@ const REFERENCES = [
   ["Gastin, P. B. (2001). Energy system interaction and relative contribution during maximal exercise. *Sports Medicine*, 31(10), 725–741.", "https://pubmed.ncbi.nlm.nih.gov/11547894/"],
   ["González-Alonso, J., Quistorff, B., Krustrup, P., Bangsbo, J., & Saltin, B. (2000). Heat production in human skeletal muscle at the onset of intense dynamic exercise. *The Journal of Physiology*, 524(2), 603–615.", "https://pmc.ncbi.nlm.nih.gov/articles/PMC2269891/"],
   ["Gorostiaga, E. M., Navarro-Amézqueta, I., Calbet, J. A. L., et al. (2012). Energy metabolism during repeated sets of leg press exercise leading to failure or not. *PLoS ONE*, 7(7), e40621.", "https://pubmed.ncbi.nlm.nih.gov/22808209/"],
+  ["Grgic, J., Garofolini, A., Orazem, J., Sabol, F., Schoenfeld, B. J., & Pedisic, Z. (2020). Effects of resistance training on muscle size and strength in very elderly adults: A systematic review and meta-analysis of randomized controlled trials. *Sports Medicine*, 50(11), 1983–1999.", "https://doi.org/10.1007/s40279-020-01331-7"],
   ["Grgic, J., Schoenfeld, B. J., Orazem, J., & Sabol, F. (2022). Effects of resistance training performed to repetition failure or non-failure on muscular strength and hypertrophy: A systematic review and meta-analysis. *Journal of Sport and Health Science*, 11(2), 202–211.", "https://doi.org/10.1016/j.jshs.2021.01.007"],
   ["Halliday, D. M., Conway, B. A., Farmer, S. F., & Rosenberg, J. R. (1999). Load-independent contributions from motor-unit synchronization to human physiological tremor. *Journal of Neurophysiology*, 82(2), 664–675.", "https://doi.org/10.1152/jn.1999.82.2.664"],
   ["Hargreaves, M., & Spriet, L. L. (2020). Skeletal muscle energy metabolism during exercise. *Nature Metabolism*, 2(9), 817–828.", "https://pubmed.ncbi.nlm.nih.gov/32747792/"],
@@ -585,6 +625,7 @@ const REFERENCES = [
   ["MacDougall, J. D., Gibala, M. J., Tarnopolsky, M. A., MacDonald, J. R., Interisano, S. A., & Yarasheski, K. E. (1995). The time course for elevated muscle protein synthesis following heavy resistance exercise. *Canadian Journal of Applied Physiology*, 20(4), 480–486.", "https://pubmed.ncbi.nlm.nih.gov/8563679/"],
   ["McGowan, C. J., Pyne, D. B., Thompson, K. G., & Rattray, B. (2015). Warm-up strategies for sport and exercise: Mechanisms and applications. *Sports Medicine*, 45, 1523–1546.", "https://pubmed.ncbi.nlm.nih.gov/26400696/"],
   ["McHugh, M. P. (2003). Recent advances in the understanding of the repeated bout effect: The protective effect against muscle damage from a single bout of eccentric exercise. *Scandinavian Journal of Medicine & Science in Sports*, 13(2), 88–97.", "https://pubmed.ncbi.nlm.nih.gov/12641640/"],
+  ["Mitchell, W. K., Williams, J., Atherton, P., Larvin, M., Lund, J., & Narici, M. (2012). Sarcopenia, dynapenia, and the impact of advancing age on human skeletal muscle size and strength; a quantitative review. *Frontiers in Physiology*, 3, 260.", "https://pmc.ncbi.nlm.nih.gov/articles/PMC3429036/"],
   ["Mizumura, K., & Taguchi, T. (2016). Delayed onset muscle soreness: Involvement of neurotrophic factors. *The Journal of Physiological Sciences*, 66(1), 43–52.", "https://pubmed.ncbi.nlm.nih.gov/26467448/"],
   ["Moritani, T., & deVries, H. A. (1979). Neural factors versus hypertrophy in the time course of muscle strength gain. *American Journal of Physical Medicine*, 58(3), 115–130.", "https://pubmed.ncbi.nlm.nih.gov/453338/"],
   ["Morton, R. W., et al. (2018). A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength in healthy adults. *British Journal of Sports Medicine*, 52(6), 376–384.", "https://pmc.ncbi.nlm.nih.gov/articles/PMC5867436/"],
@@ -602,6 +643,7 @@ const REFERENCES = [
   ["Schoenfeld, B. J., et al. (2016). Longer interset rest periods enhance muscle strength and hypertrophy in resistance-trained men. *Journal of Strength and Conditioning Research*, 30(7), 1805–1812.", "https://pubmed.ncbi.nlm.nih.gov/26605807/"],
   ["Singer, A., et al. (2024). Give it a rest: A systematic review with Bayesian meta-analysis on the effect of inter-set rest interval duration on muscle hypertrophy. *Frontiers in Sports and Active Living*, 6, 1429789.", "https://doi.org/10.3389/fspor.2024.1429789"],
   ["Thomas, D. T., Erdman, K. A., & Burke, L. M. (2016). American College of Sports Medicine joint position statement: Nutrition and athletic performance. *Medicine & Science in Sports & Exercise*, 48(3), 543–568.", "https://journals.lww.com/acsmmsse/Fulltext/2016/03000/Nutrition_and_Athletic_Performance.25.aspx"],
+  ["Walker, S., von Bonsdorff, M., Cheng, S., Häkkinen, K., Bondarev, D., Heinonen, A., & Korhonen, M. T. (2023). Body composition in male lifelong trained strength, sprint and endurance athletes and healthy age-matched controls. *Frontiers in Sports and Active Living*, 5, 1295906.", "https://doi.org/10.3389/fspor.2023.1295906"],
   ["Zourdos, M. C., et al. (2016). Novel resistance training-specific rating of perceived exertion scale measuring repetitions in reserve. *Journal of Strength and Conditioning Research*, 30(1), 267–275.", "https://doi.org/10.1519/JSC.0000000000001049"]
 ];
 const WALLS = [];
@@ -1629,7 +1671,9 @@ scene.add(titleSpot, titleSpot.target);
 const WALL_LINES = [
   { hall: 0, lines: ["ERAS CHANGE.", "FEELINGS DON'T."], x: 15.9, y: 2.45, capM: 0.62 },
   /* Hall III: the open stretch of the long wall between the entrance and the works hung at 45 */
-  { hall: 2, lines: ["THE WORK IS DONE.", "THE BODY ISN'T."], x: 21, y: 2.45, capM: 0.62 }
+  { hall: 2, lines: ["THE WORK IS DONE.", "THE BODY ISN'T."], x: 21, y: 2.45, capM: 0.62 },
+  /* Hall III, on the back wall above the kiosk: the one line the screen shows */
+  { hall: 2, lines: ["THE BODY KEEPS", "WHAT IT USES."], x: 51.6, y: 2.35, capM: 0.34 }
 ];
 function buildWallLine(spec) {
   const px = 300, size = Math.round(spec.capM / 0.72 * px), lh = Math.round(size * 0.98);
@@ -1654,7 +1698,7 @@ function buildWallLine(spec) {
 /* ---------------- projector ----------------
    A video projected onto Hall I's back wall, between the painted line and the 80s works: a black ceiling frame
    on four rods, the projector hanging under it, a faint beam through the air and a bright 4:3 image on the plaster. */
-const PROJ = { hall: 0, x: 24.6, y: 2.45, w: 3.6, h: 2.7, throwZ: 4.6, src: "video/fonda-warmup.mp4",
+const PROJ = { hall: 0, x: 24.6, y: 2.45, w: 3.6, h: 2.7, throwZ: 4.6, src: "video/fonda-warmup.mp4", audio: "video/fonda-warmup-audio.mp4",
   title: "Jane Fonda's Workout", note: "Jane Fonda's Workout, released on video in 1982. Thirty seconds of the warm-up, on a loop.",
   label: { title: "Jane Fonda's Workout", src: "Home video, 1982 · excerpt from the warm-up, 30 seconds, looped", desc: "Jane Fonda leads a class through the warm-up in a studio with tall arched windows." } };
 let projVideo = null;
@@ -1726,8 +1770,8 @@ function buildProjector() {
     if (v.duration && !v.paused) { const t = v.currentTime; fade = Math.max(0, Math.min(1, t / FADE, (v.duration - t) / FADE)); screenMat.uniforms.uFade.value = fade; }
     if (projGain) {
       camera.getWorldPosition(ear);
-      const d = ear.distanceTo(source), near = 5, far = 17;
-      const level = projSoundOn ? Math.pow(THREE.MathUtils.clamp(1 - (d - near) / (far - near), 0, 1), 1.3) * 0.85 * (0.25 + 0.75 * fade) : 0;
+      const d = ear.distanceTo(source), near = 9.5, far = 22;   /* full volume anywhere in front of the screen, gone in the next hall */
+      const level = projSoundOn ? Math.pow(THREE.MathUtils.clamp(1 - (d - near) / (far - near), 0, 1), 1.3) * 1.0 * (0.25 + 0.75 * fade) : 0;
       projGain.gain.setTargetAtTime(level, audioCtx.currentTime, 0.12);
     }
     requestAnimationFrame(tick);
@@ -1821,33 +1865,327 @@ function buildProjector() {
   }));
   beam.renderOrder = 3; g.add(beam);
 }
-/* sound: browsers allow it only after a tap or click, so it is switched on by the first one (entering the museum).
-   It runs through Web Audio, because phones ignore a video's own volume setting */
-let audioCtx = null, projGain = null, projSoundOn = true;
+/* sound: the video itself always plays muted (every browser allows that). Its soundtrack is a separate small
+   audio file, decoded once and played through Web Audio in step with the picture. Browsers allow sound only after
+   a click or tap, so the first one (entering the museum) switches it on; a volume control makes it loud in front
+   of the screen and fade away across the hall. This route works the same in Chrome, Safari and on iPhone. */
+let audioCtx = null, projGain = null, projSoundOn = true, projBuf = null, projSrc = null, projLoading = false, projStartedAt = 0;
+/* iPhone: let the sound play even when the silent switch is on, like a video does (Safari 17+) */
+try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (_) {}
+function startProjectorAudio() {
+  if (!audioCtx || !projBuf || audioCtx.state !== "running") return;
+  if (projSrc) { try { projSrc.stop(); } catch (_) {} projSrc.disconnect(); }
+  const dur = projBuf.duration, at = projVideo && projVideo.duration ? (projVideo.currentTime % dur) : 0;
+  projSrc = audioCtx.createBufferSource(); projSrc.buffer = projBuf; projSrc.loop = true;
+  projSrc.connect(projGain); projSrc.start(0, at);
+  projStartedAt = audioCtx.currentTime - at;
+}
 function enableProjectorSound() {
   if (!projVideo) return;
+  const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
   if (!audioCtx) {
-    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-    try {
-      audioCtx = new AC();
-      const src = audioCtx.createMediaElementSource(projVideo);
-      projGain = audioCtx.createGain(); projGain.gain.value = 0;
-      src.connect(projGain); projGain.connect(audioCtx.destination);
-    } catch (e) { console.warn("projector sound:", e); audioCtx = null; projGain = null; return; }
+    try { audioCtx = new AC(); } catch (_) { audioCtx = null; return; }
+    projGain = audioCtx.createGain(); projGain.gain.value = 0; projGain.connect(audioCtx.destination);
+    audioCtx.onstatechange = () => { if (audioCtx.state === "running" && !projSrc) startProjectorAudio(); };
   }
-  if (audioCtx.state === "suspended") audioCtx.resume();
-  /* every tap may unmute: the first one can come before the video is ready */
-  projVideo.muted = false; projVideo.removeAttribute("muted");
+  /* a silent blip inside the tap unlocks audio on older iPhones */
+  try { const b = audioCtx.createBuffer(1, 1, 22050), s = audioCtx.createBufferSource(); s.buffer = b; s.connect(audioCtx.destination); s.start(0); } catch (_) {}
+  if (audioCtx.state !== "running") { const p = audioCtx.resume(); if (p && p.then) p.then(() => { if (!projSrc) startProjectorAudio(); }).catch(() => {}); }
+  if (!projBuf && !projLoading) {
+    projLoading = true;
+    fetch(PROJ.audio).then(r => r.arrayBuffer()).then(data => new Promise((ok, bad) => {
+      const p = audioCtx.decodeAudioData(data, ok, bad); if (p && p.then) p.then(ok, bad);   /* older Safari only has the callback form */
+    })).then(buf => { projBuf = buf; startProjectorAudio(); }).catch(e => { projLoading = false; console.warn("projector sound:", e); });
+  } else if (!projSrc) startProjectorAudio();
 }
+/* keep sound and picture together: if they drift apart by more than a quarter second, line the sound up again */
+setInterval(() => {
+  if (!projSrc || !projBuf || !projVideo || projVideo.paused || !audioCtx) return;
+  const dur = projBuf.duration, heard = (audioCtx.currentTime - projStartedAt) % dur, seen = projVideo.currentTime % dur;
+  let diff = Math.abs(heard - seen); diff = Math.min(diff, dur - diff);
+  if (diff > 0.25) startProjectorAudio();
+}, 2000);
 function playProjector() {
   enableProjectorSound();
-  if (projVideo && projVideo.paused) { const p = projVideo.play(); if (p && p.catch) p.catch(() => { projVideo.muted = true; projVideo.play().catch(() => {}); }); }
+  if (projVideo && projVideo.paused) { projVideo.muted = true; const p = projVideo.play(); if (p && p.catch) p.catch(() => {}); }
 }
+/* Safari counts a click or a lifted finger as permission for sound, not the first touch: listen to all of them */
+["click", "touchend", "keydown"].forEach(ev => addEventListener(ev, () => playProjector(), { passive: true }));
 const soundBtn = document.getElementById("soundBtn");
 soundBtn.addEventListener("click", () => {
   projSoundOn = !projSoundOn; soundOn = projSoundOn; playProjector();   /* the same switch silences the light switches too */
   soundBtn.textContent = projSoundOn ? "Sound on" : "Sound off"; soundBtn.setAttribute("aria-pressed", String(projSoundOn));
 });
+
+/* ---------------- kiosk: "The long run" ----------------
+   A touchscreen on a stand in Hall III, after Growth. Its screen opens as an overlay with an age slider (30–80)
+   and two drawn bodies side by side, with a slice through the thigh under each.
+   The model is illustrative, built on: Mitchell et al. 2012 (adults lose ~0.37–0.47% of muscle mass a year,
+   0.64–0.98%/yr around 75), Walker et al. 2023 (lifelong strength athletes aged 70–89: limb lean mass ~17% above
+   untrained peers, ~20% below young strength athletes), Bloch-Ibenfeldt et al. 2024, Grgic et al. 2020. */
+const KIOSK = { hall: 2, x: 51.6, z: 8.5 };   /* hall-local: Hall III, near the end of the back wall, beside the way out */
+const kioskModel = age => {
+  const a = age - 20, a30 = Math.max(0, age - 30);   /* the slider starts at 20; muscle peaks in the twenties and loss begins after 30 */
+  const mU = 100 * Math.pow(0.9955, Math.min(a30, 40)) * Math.pow(0.991, Math.max(0, age - 70));   /* ~0.45%/yr from 30, then ~0.9%/yr from about 70 */
+  const mT = mU * (1 + 0.15 * (1 - Math.exp(-a / 1.5)));   /* early gains of ~15%, then the same loss with age: ~15–17% above untrained late in life (Walker 2023) */
+  return {
+    T: { m: mT, fat: 0.9 + 0.003 * a, marb: Math.min(0.35, Math.max(0, (age - 50) / 80)), grey: age },
+    U: { m: mU, fat: 0.96 + 0.012 * Math.max(0, age - 25), marb: Math.min(1, Math.max(0, (age - 40) / 40)), grey: age }
+  };
+};
+function kioskBody(g, cx, top, s, st) {
+  /* a calm front-view figure in the manner of an anatomy plate: tapered limbs that grow from the joints,
+     a soft skin tone, and the big muscle groups laid over in red, all sized by muscle and fat */
+  const mn = st.m / 100, f = st.fat, S = v => v * s;
+  const skin = "#dcc6ab", shade = "#c9b193", red = "rgba(196,82,72,0.82)", redL = "rgba(196,82,72,0.55)";
+  const Sw = S(47 * (0.8 + 0.2 * mn)), Ww = S(28 * (0.82 + 0.34 * (f - 0.9))), Hw = S(33 * (0.88 + 0.24 * (f - 0.9)));
+  const yN = top + S(52), yS = top + S(66), yW = top + S(146), yH = top + S(172), yK = top + S(238), yF = top + S(300);
+  /* a tapered limb: a rounded quad from joint to joint */
+  const taper = (x1, y1, x2, y2, w1, w2, c) => {
+    const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+    g.fillStyle = c; g.beginPath();
+    g.moveTo(x1 + nx * w1 / 2, y1 + ny * w1 / 2); g.lineTo(x2 + nx * w2 / 2, y2 + ny * w2 / 2);
+    g.lineTo(x2 - nx * w2 / 2, y2 - ny * w2 / 2); g.lineTo(x1 - nx * w1 / 2, y1 - ny * w1 / 2); g.closePath(); g.fill();
+    g.beginPath(); g.arc(x1, y1, w1 / 2, 0, 7); g.fill(); g.beginPath(); g.arc(x2, y2, w2 / 2, 0, 7); g.fill();   /* rounded joints */
+  };
+  const blob = (x, y, rx, ry, rot, c) => { g.fillStyle = c; g.beginPath(); g.ellipse(x, y, rx, ry, rot, 0, 7); g.fill(); };
+  /* legs, behind the torso */
+  [-1, 1].forEach(k => {
+    const hx = cx + k * S(15), kx = cx + k * S(17), ax = cx + k * S(18);
+    const th = S(27) * mn * (0.86 + 0.18 * f), kn = S(15) * (0.9 + 0.1 * mn), cf = S(17) * mn * (0.9 + 0.1 * f), an = S(8);
+    taper(hx, yH - S(6), kx, yK, th, kn, skin);
+    taper(kx, yK, ax, yF - S(8), cf, an, skin);
+    blob(ax + k * S(3), yF - S(4), S(9), S(4.5), 0, shade);                                   /* foot */
+    blob(hx + k * S(1.5), (yH + yK) / 2 - S(2), S(9.5) * mn, S(28), k * 0.05, red);           /* quadriceps */
+    blob(kx + k * S(1.5), yK + S(22), S(6) * mn, S(17), 0, redL);                             /* calf */
+  });
+  /* torso: neck, trapezius slope, shoulders, waist, hips */
+  g.fillStyle = skin; g.beginPath();
+  g.moveTo(cx - S(9), yN); g.quadraticCurveTo(cx - S(18), yS - S(4), cx - Sw, yS + S(2));
+  g.quadraticCurveTo(cx - Sw - S(3), yS + S(14), cx - Sw + S(4), top + S(96));
+  g.quadraticCurveTo(cx - Ww - S(2), top + S(118), cx - Ww, yW); g.quadraticCurveTo(cx - Hw - S(2), yW + S(14), cx - Hw, yH);
+  g.lineTo(cx + Hw, yH); g.quadraticCurveTo(cx + Hw + S(2), yW + S(14), cx + Ww, yW);
+  g.quadraticCurveTo(cx + Ww + S(2), top + S(118), cx + Sw - S(4), top + S(96));
+  g.quadraticCurveTo(cx + Sw + S(3), yS + S(14), cx + Sw, yS + S(2)); g.quadraticCurveTo(cx + S(18), yS - S(4), cx + S(9), yN);
+  g.closePath(); g.fill();
+  [-1, 1].forEach(k => blob(cx + k * S(13) * (0.85 + 0.15 * mn), top + S(86), S(14) * mn, S(10) * mn, k * 0.15, red));   /* chest */
+  g.strokeStyle = "rgba(150,120,95,0.35)"; g.lineWidth = S(1); g.beginPath(); g.moveTo(cx, top + S(98)); g.lineTo(cx, yW + S(4)); g.stroke();   /* centre line */
+  /* arms: from the shoulder joint, a little away from the body */
+  [-1, 1].forEach(k => {
+    const sx = cx + k * (Sw - S(6)), sy = yS + S(8), ex = cx + k * (Sw + S(4)), ey = top + S(126), hx = cx + k * (Sw + S(8)), hy = top + S(180);
+    taper(sx, sy, ex, ey, S(17) * mn, S(11), skin);
+    taper(ex, ey, hx, hy, S(12) * mn, S(7.5), skin);
+    blob(hx + k * S(0.5), hy + S(7), S(5.5), S(8), 0, shade);                                 /* hand */
+    blob(sx + k * S(2), sy - S(1), S(10.5) * mn, S(9.5) * mn, 0, red);                         /* shoulder */
+    blob((sx + ex) / 2 + k * S(0.5), (sy + ey) / 2 + S(3), S(5.5) * mn, S(15), k * -0.1, red); /* biceps */
+  });
+  /* head; hair greys with the years */
+  blob(cx, top + S(30), S(17), S(21), 0, skin);
+  const grey = Math.min(1, Math.max(0, (st.grey - 45) / 30)), hc = Math.round(58 + grey * 140);
+  g.fillStyle = `rgb(${hc},${Math.round(hc * 0.86)},${Math.round(hc * 0.76)})`;
+  g.beginPath(); g.ellipse(cx, top + S(26), S(17.5), S(18), 0, Math.PI * 1.03, Math.PI * 1.97); g.fill();
+  g.strokeStyle = "rgba(255,255,255,0.12)"; g.lineWidth = 1; g.beginPath(); g.moveTo(cx - S(60), yF + S(2)); g.lineTo(cx + S(60), yF + S(2)); g.stroke();   /* floor line */
+}
+/* a photo-like slice through the middle of the thigh, drawn pixel by pixel: skin, subcutaneous fat in lobules,
+   muscle bellies with a fibrous grain separated by pale fascia, and the femur with its marrow. With less muscle
+   use, fat threads between the bellies and into them, as on MRI and anatomy photographs of older, inactive legs */
+let KN_ = null;
+const kNoise = () => KN_ || (KN_ = (() => {
+  /* fixed noise tables, made once on first use: smooth value noise, layered */
+  const N = 256, hash = (i, j) => { const s = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return s - Math.floor(s); };
+  const vnoise = (x, y) => { const i = Math.floor(x), j = Math.floor(y), fx = x - i, fy = y - j, sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+    const a = hash(i, j), b = hash(i + 1, j), c = hash(i, j + 1), d = hash(i + 1, j + 1); return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy; };
+  const table = (f, oct) => { const t = new Float32Array(N * N); for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { let v = 0, amp = 0.5, fr = 1; for (let o = 0; o < oct; o++) { v += amp * vnoise(x / N * f * fr, y / N * f * fr); amp *= 0.5; fr *= 2; } t[y * N + x] = v; } return t; };
+  return { N, fine: table(48, 3), mid: table(14, 4), coarse: table(5, 3) };
+})());
+const kLook = (t, u, v) => { const N = KN_.N, x = ((Math.floor(u * N) % N) + N) % N, y = ((Math.floor(v * N) % N) + N) % N; return t[y * N + x]; };
+/* muscle bellies in normalised coordinates (x across, y front-to-back): quadriceps in front, hamstrings behind,
+   adductors on the inner side; each with its own grain direction */
+const K_SEEDS = [[-0.08, -0.7, 0.2], [0.3, -0.62, 0.7], [-0.42, -0.55, -0.6], [0.58, -0.32, 1.1], [-0.66, -0.22, -1.0], [0.08, -0.38, 0.1], [-0.25, -0.18, -0.3],
+  [0.72, 0.08, 1.5], [-0.74, 0.18, -1.3], [0.42, 0.2, 0.6], [-0.5, 0.45, -0.7], [-0.15, 0.68, -0.1], [0.22, 0.66, 0.4], [0.55, 0.48, 0.9], [-0.2, 0.32, -0.2], [0.02, 0.02, 0.3]];
+function kioskSlice(cv, st) {
+  const KN = kNoise();
+  const W = cv.width, H = cv.height, g = cv.getContext("2d"), img = g.createImageData(W, H), D = img.data;
+  const sc = W / 440, cx = W / 2, cy = H / 2 + 4 * sc;
+  const rM = 150 * sc * Math.sqrt(st.m / 110), fatT = (12 + 30 * (st.fat - 0.9)) * sc, skinT = 3.2 * sc, rO = rM + fatT + skinT, ey = 0.8;
+  const marb = st.marb, fasW = 0.011 + 0.1 * marb, glob = 1 - 0.55 * marb;
+  const bx = 0.1, by = 0.16, bR = 0.17;   /* the femur, a little behind and to the inner side */
+  const mix = (a, b, t) => a + (b - a) * t;
+  for (let py = 0; py < H; py++) for (let px = 0; px < W; px++) {
+    const dx = px - cx, dy = (py - cy) / ey, r0 = Math.hypot(dx, dy), ang = Math.atan2(dy, dx);
+    const r = r0 + (kLook(KN.coarse, 0.5 + Math.cos(ang) * 0.2, 0.5 + Math.sin(ang) * 0.2) - 0.5) * 16 * sc;   /* an organic outline */
+    if (r > rO) continue;
+    let R, G, B;
+    const shade = 0.82 + 0.18 * (1 - r / rO) + 0.08 * Math.max(0, -(dx + dy) / rO);   /* soft dome and a wet highlight from the upper left */
+    if (r > rO - skinT) { const t = (r - (rO - skinT)) / skinT; R = mix(214, 170, t); G = mix(160, 112, t); B = mix(146, 104, t); }
+    else if (r > rM + 1.5 * sc) {
+      /* fat: pale yellow lobules with thin pink septa */
+      const u = px / W, v = py / H, n = kLook(KN.mid, u * 1.6, v * 1.6), sep = Math.abs(kLook(KN.fine, u * 0.9 + n * 0.08, v * 0.9) - 0.5);
+      R = mix(232, 246, n); G = mix(206, 228, n); B = mix(150, 182, n);
+      if (sep < 0.018) { R = mix(R, 222, 0.6); G = mix(G, 170, 0.6); B = mix(B, 150, 0.6); }
+    } else if (r > rM - 1.6 * sc) { R = 236; G = 214; B = 204; }   /* deep fascia around the muscle */
+    else {
+      const ux = dx / rM, uy = dy / rM, db = Math.hypot(ux - bx, uy - by);
+      if (db < bR) {
+        if (db > bR * 0.66) { const n = kLook(KN.fine, ux * 3, uy * 3); R = mix(232, 246, n); G = mix(222, 238, n); B = mix(196, 214, n); }   /* cortex */
+        else { const n = kLook(KN.fine, ux * 5 + 0.3, uy * 5); R = mix(196, 226, n); G = mix(140, 178, n); B = mix(72, 104, n); }               /* marrow */
+      } else if (db < bR + 0.025) { R = 228; G = 196; B = 188; }   /* periosteum */
+      else {
+        /* warp the plane a little so the bellies have soft, curved borders, not straight ones */
+        const wx = ux + 0.16 * (kLook(KN.mid, ux * 0.55 + 0.31, uy * 0.55 + 0.17) - 0.5), wy = uy + 0.16 * (kLook(KN.mid, ux * 0.55 + 0.71, uy * 0.55 + 0.43) - 0.5);
+        let d1 = 9, d2 = 9, k1 = 0;
+        for (let k = 0; k < K_SEEDS.length; k++) { const s = K_SEEDS[k], d = Math.hypot(wx - s[0], wy - s[1]); if (d < d1) { d2 = d1; d1 = d; k1 = k; } else if (d < d2) d2 = d; }
+        const edge = d2 - d1, a = K_SEEDS[k1][2], ca = Math.cos(a), sa = Math.sin(a);
+        const fx = ux * ca - uy * sa, fy = ux * sa + uy * ca;
+        const grain = kLook(KN.fine, fx * 0.35, fy * 4.2), body = kLook(KN.mid, ux * 0.8 + 0.2, uy * 0.8);
+        R = mix(112, 196, 0.42 * grain + 0.42 * body); G = mix(14, 40, 0.35 * grain + 0.4 * body); B = mix(24, 50, 0.35 * grain + 0.4 * body);
+        const fine = Math.abs(kLook(KN.fine, ux * 1.6 + grain * 0.05, uy * 1.6) - 0.5);
+        if (fine < 0.006 + 0.01 * marb) { R = mix(R, 214, 0.45); G = mix(G, 160, 0.45); B = mix(B, 150, 0.45); }   /* fine connective tissue inside the belly */
+        if (edge < fasW) {   /* fascia between bellies: white-pink when lean, yellow fat when infiltrated */
+          const t = (1 - edge / fasW) * (0.62 + 0.38 * marb);
+          R = mix(R, mix(228, 240, marb), t); G = mix(G, mix(186, 214, marb), t); B = mix(B, mix(182, 150, marb), t);
+        }
+        const gl = kLook(KN.mid, wx * 1.15 + 0.4, wy * 1.15 + 0.1);
+        if (gl > glob + 0.08) { const t = Math.min(1, (gl - glob - 0.08) * 12); R = mix(R, 238, t); G = mix(G, 212, t); B = mix(B, 152, t); }   /* fat globules */
+      }
+    }
+    const i = (py * W + px) * 4;
+    D[i] = Math.min(255, R * shade); D[i + 1] = Math.min(255, G * shade); D[i + 2] = Math.min(255, B * shade); D[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+}
+function kioskDraw(cv, st) { kioskSlice(cv, st); }
+const kioskEl = document.getElementById("kiosk"), kioskSlider = document.getElementById("kioskSlider");
+/* plain words instead of a ratio: "6% more muscle than at 20", "25% less muscle than at 20" */
+function kioskDiff(m) { const d = Math.round(m) - 100; return d === 0 ? "same muscle as at 20" : `${Math.abs(d)}% ${d > 0 ? "more" : "less"} muscle than at 20`; }
+function kioskRender() {
+  const age = +kioskSlider.value, M = kioskModel(age);
+  document.getElementById("kioskAge").textContent = `Age ${age}`;
+  kioskDraw(document.getElementById("kioskA"), M.T); kioskDraw(document.getElementById("kioskB"), M.U);
+  document.getElementById("kioskValA").innerHTML = `Thigh: <b>${kioskDiff(M.T.m)}</b>`;
+  document.getElementById("kioskValB").innerHTML = `Thigh: <b>${kioskDiff(M.U.m)}</b>`;
+}
+function openKiosk() {
+  if (KIOSK.age) kioskSlider.value = KIOSK.age;   /* the full view starts at the age set on the screen in the hall */
+  kioskEl.hidden = false; requestAnimationFrame(() => kioskEl.classList.add("open"));
+  kioskRender(); kioskSlider.focus({ preventScroll: true }); hideHint();
+}
+function closeKiosk() { if (kioskEl.hidden) return; if (KIOSK.canvas && +kioskSlider.value !== KIOSK.age) { KIOSK.age = +kioskSlider.value; drawKioskScreen(KIOSK.age); } kioskEl.classList.remove("open"); setTimeout(() => { kioskEl.hidden = true; }, 300); }
+let kioskQueued = false;
+kioskSlider.addEventListener("input", () => { if (kioskQueued) return; kioskQueued = true; requestAnimationFrame(() => { kioskQueued = false; kioskRender(); }); });   /* one redraw per frame */
+kioskEl.querySelector(".close").addEventListener("click", closeKiosk);
+kioskEl.addEventListener("click", e => { if (!e.target.closest(".bezel")) closeKiosk(); });
+/* the screen in the hall: title, slider and the two slices for one age. The slider sits at x 110–790, y 605
+   on a 1820 × 1024 canvas; dragging there (see the pointer handlers) changes the age */
+const KS = { x0: 110, x1: 790, y: 605, slices: null };
+function drawKioskScreen(age) {
+  const c = KIOSK.canvas; if (!c) return;
+  const g = c.getContext("2d"), t = (age - 20) / 60;
+  const gr = g.createRadialGradient(910, -80, 120, 910, 300, 1700); gr.addColorStop(0, "#222c3e"); gr.addColorStop(1, "#0d1118"); g.fillStyle = gr; g.fillRect(0, 0, 1820, 1024);
+  if ("letterSpacing" in g) g.letterSpacing = "0px";
+  g.fillStyle = "#efe8dc"; g.font = `700 116px ${DISPLAY}`; g.fillText("THE LONG RUN", 110, 360);
+  g.fillStyle = "#cfd3da"; g.font = `400 40px 'Libre Franklin', sans-serif`; g.fillText("Drag the slider through the years", 110, 480);
+  g.fillStyle = "#efe8dc"; g.font = `600 56px 'Libre Franklin', sans-serif`; g.fillText(`Age ${age}`, 110, 560);
+  const kx = KS.x0 + (KS.x1 - KS.x0) * t;
+  g.fillStyle = "rgba(255,255,255,0.18)"; g.fillRect(KS.x0, KS.y - 5, KS.x1 - KS.x0, 10); g.fillStyle = "#e5675a"; g.fillRect(KS.x0, KS.y - 5, kx - KS.x0, 10);
+  g.fillStyle = "rgba(229,103,90,0.25)"; g.beginPath(); g.arc(kx, KS.y, 40, 0, 7); g.fill();
+  g.fillStyle = "#efe8dc"; g.beginPath(); g.arc(kx, KS.y, 26, 0, 7); g.fill();
+  g.fillStyle = "#9fa6b4"; g.font = `400 34px 'Libre Franklin', sans-serif`; g.fillText("20", KS.x0, 680); g.fillText("80", KS.x1 - 40, 680);
+  const M = kioskModel(age);
+  if (!KS.slices) KS.slices = [document.createElement("canvas"), document.createElement("canvas")].map(s => { s.width = s.height = 280; return s; });
+  [[M.T, 1130, "regular training", KS.slices[0]], [M.U, 1560, "no training", KS.slices[1]]].forEach(([st, x, label, sc]) => {
+    kioskSlice(sc, st); g.drawImage(sc, x - 200, 300, 400, 400);
+    g.fillStyle = "#cfd3da"; g.font = `500 34px 'Libre Franklin', sans-serif`; g.textAlign = "center"; g.fillText(label, x, 760);
+    g.fillStyle = "#ffffff"; { const t = kioskDiff(st.m), i = t.search(/ (than|as) at 20/); g.font = `600 40px 'Libre Franklin', sans-serif`; g.fillText(t.slice(0, i), x, 818); g.fillStyle = "#cfd3da"; g.font = `400 32px 'Libre Franklin', sans-serif`; g.fillText(t.slice(i + 1), x, 858); } g.textAlign = "start";
+  });
+  g.fillStyle = "#7d8594"; g.font = `400 28px 'Libre Franklin', sans-serif`; g.fillText("An illustrative model · tap elsewhere on the screen for the full view and sources", 110, 990);
+  /* what is what in the slices */
+  [["#c4453f", "muscle", 1020], ["#ecdcae", "fat", 1290], ["#f4f1ea", "bone", 1480]].forEach(([col, label, x]) => {
+    g.fillStyle = col; g.beginPath(); g.arc(x, 918, 16, 0, 7); g.fill();
+    g.fillStyle = "#cfd3da"; g.font = `500 36px 'Libre Franklin', sans-serif`; g.fillText(label, x + 30, 930);
+  });
+  KIOSK.tex.needsUpdate = true;
+}
+/* uv on the screen → canvas pixels; true if the point is on (or near) the slider */
+function kioskUV(uv) { return { x: uv.x * 1820, y: (1 - uv.y) * 1024 }; }
+function kioskOnSlider(p) { return p.x > KS.x0 - 60 && p.x < KS.x1 + 60 && p.y > KS.y - 110 && p.y < KS.y + 110; }
+let kioskQueuedAge = null;
+function kioskSetAgeFromPoint(p) {
+  const t = THREE.MathUtils.clamp((p.x - KS.x0) / (KS.x1 - KS.x0), 0, 1), age = Math.round(20 + 60 * t);
+  if (age === KIOSK.age) return;
+  KIOSK.age = age;
+  if (kioskQueuedAge === null) requestAnimationFrame(() => { kioskQueuedAge = null; drawKioskScreen(KIOSK.age); });
+  kioskQueuedAge = age;
+}
+function buildKiosk() {
+  /* a large interactive display on a stand, as in museum galleries: a 65-inch class screen (about 1.45 × 0.82 m)
+     in a thin rounded bezel behind glass, tilted back toward the visitor, on a leaning column and a low flat base */
+  const Y = new THREE.Vector3(0, 1, 0), fr = HALL_FRAMES[KIOSK.hall];
+  const axis = new THREE.Vector3(1, 0, 0).applyAxisAngle(Y, fr.rot), nrm = new THREE.Vector3(0, 0, 1).applyAxisAngle(Y, fr.rot);
+  const k = new THREE.Group();
+  k.position.copy(fr.origin).addScaledVector(axis, KIOSK.x).addScaledVector(nrm, KIOSK.z);
+  k.rotation.y = fr.rot + Math.PI; scene.add(k);   /* local +z faces into the hall */
+  const satin = new THREE.MeshPhysicalMaterial({ color: 0x17181b, roughness: 0.38, metalness: 0.6, clearcoat: 0.4, clearcoatRoughness: 0.35 });
+  const gloss = new THREE.MeshPhysicalMaterial({ color: 0x0b0b0d, roughness: 0.18, metalness: 0.2, clearcoat: 1, clearcoatRoughness: 0.08 });
+  const rrect = (w, h, r) => { const s = new THREE.Shape(), x = -w / 2, y = -h / 2;
+    s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return s; };
+  /* base: a low rounded plate on the floor */
+  const baseGeo = new THREE.ExtrudeGeometry(rrect(0.86, 0.62, 0.12), { depth: 0.024, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.006, bevelSegments: 3 });
+  const base = new THREE.Mesh(baseGeo, satin); base.rotation.x = -Math.PI / 2; base.position.set(0, 0.004, -0.08); k.add(base);
+  /* column: a flat blade leaning forward from the back of the base up under the screen */
+  const colGeo = new THREE.ExtrudeGeometry(rrect(0.2, 1.02, 0.03), { depth: 0.07, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.008, bevelSegments: 3 });
+  colGeo.translate(0, 0.51, -0.035);
+  const col = new THREE.Mesh(colGeo, satin); col.position.set(0, 0.03, -0.24); col.rotation.x = 0.26; k.add(col); solids.push(col);
+  /* head: the screen, tilted back */
+  const head = new THREE.Group(); head.position.set(0, 1.06, 0.02); head.rotation.x = -0.82; k.add(head);
+  const W = 1.5, H = 0.88, SW = 1.43, SH = 0.805;
+  const houseGeo = new THREE.ExtrudeGeometry(rrect(W, H, 0.035), { depth: 0.045, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.008, bevelSegments: 4 });
+  houseGeo.translate(0, 0, -0.06);
+  const housing = new THREE.Mesh(houseGeo, gloss); head.add(housing);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.36, 0.06), satin); back.position.set(0, -0.02, -0.11); head.add(back);   /* the mount behind the screen */
+  /* the screen in the room is live: its picture is drawn for the current age and the slider can be dragged on it */
+  const c = document.createElement("canvas"); c.width = 1820; c.height = 1024;
+  const tex = canvasTex(c); tex.anisotropy = 8;
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(SW, SH), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, color: 0xe8ecf2 }));
+  screen.position.z = 0.0; head.add(screen);
+  KIOSK.canvas = c; KIOSK.tex = tex; KIOSK.screen = screen; KIOSK.age = 20; KIOSK.sw = SW; KIOSK.sh = SH;
+  drawKioskScreen(KIOSK.age);
+  /* the cover glass: catches the room's lights as soft reflections */
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.03, H - 0.03), new THREE.MeshPhysicalMaterial({ color: 0x000000, roughness: 0.04, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.02, transparent: true, opacity: 0.16, envMapIntensity: 1.4, depthWrite: false }));
+  glass.position.z = 0.004; glass.renderOrder = 3; head.add(glass);
+  const led = new THREE.Mesh(new THREE.CircleGeometry(0.004, 10), ledMat); led.position.set(W / 2 - 0.05, -H / 2 + 0.02, 0.003); head.add(led);
+  /* small details that make it a real device: a brushed-aluminium edge around the bezel, a camera dot,
+     a cover where the column meets the screen and a foot plate where it meets the base */
+  const alu = new THREE.MeshPhysicalMaterial({ color: 0x9a9ca1, roughness: 0.28, metalness: 1, clearcoat: 0.3 });
+  const rimShape = rrect(W + 0.02, H + 0.02, 0.042); rimShape.holes.push(rrect(W - 0.004, H - 0.004, 0.034));
+  const rim = new THREE.Mesh(new THREE.ExtrudeGeometry(rimShape, { depth: 0.064, bevelEnabled: false, curveSegments: 10 }), alu);
+  rim.position.z = -0.066; head.add(rim);
+  const cam = new THREE.Mesh(new THREE.CircleGeometry(0.007, 16), new THREE.MeshPhysicalMaterial({ color: 0x050507, roughness: 0.1, clearcoat: 1 }));
+  cam.position.set(0, H / 2 - 0.022, 0.002); head.add(cam);
+  const cover = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.16, 0.05), satin); cover.position.set(0, -0.1, -0.15); head.add(cover);
+  const foot = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.03, 0.14), satin); foot.position.set(0, 0.04, -0.24); k.add(foot);
+  /* glare on the cover glass: a soft diagonal band and a brighter top edge, as a real screen in a lit room shows */
+  const gc = document.createElement("canvas"); gc.width = 512; gc.height = 300; const gg = gc.getContext("2d");
+  const band = gg.createLinearGradient(0, 0, 512, 300);
+  band.addColorStop(0, "rgba(255,255,255,0)"); band.addColorStop(0.32, "rgba(255,255,255,0)"); band.addColorStop(0.42, "rgba(255,255,255,0.16)");
+  band.addColorStop(0.5, "rgba(255,255,255,0.05)"); band.addColorStop(0.62, "rgba(255,255,255,0.11)"); band.addColorStop(0.7, "rgba(255,255,255,0)"); band.addColorStop(1, "rgba(255,255,255,0)");
+  gg.fillStyle = band; gg.fillRect(0, 0, 512, 300);
+  const top = gg.createLinearGradient(0, 0, 0, 60); top.addColorStop(0, "rgba(255,255,255,0.14)"); top.addColorStop(1, "rgba(255,255,255,0)"); gg.fillStyle = top; gg.fillRect(0, 0, 512, 60);
+  const glare = new THREE.Mesh(new THREE.PlaneGeometry(SW, SH), new THREE.MeshBasicMaterial({ map: canvasTex(gc), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+  glare.position.z = 0.006; glare.renderOrder = 4; head.add(glare);
+  /* grounding: a soft contact shadow under the base and a fainter one cast forward under the screen */
+  const cs = decal(k, shadowTex, 0, 0, 1.05, 0.82, 0, 0.62); cs.rotation.x = -Math.PI / 2; cs.position.set(0, 0.003, -0.08);
+  const cs2 = decal(k, shadowTex, 0, 0, 1.6, 0.9, 0, 0.22); cs2.rotation.x = -Math.PI / 2; cs2.position.set(0, 0.0025, 0.25);
+  [housing, screen, glass, glare].forEach(m => { m.userData = { type: "kiosk" }; clickables.push(m); });
+  /* the screen's own light: a cool, soft wash on the floor and on whoever stands in front of it */
+  k.updateMatrixWorld(true);
+  const spill = new THREE.RectAreaLight(0xaabbd8, 0, SW, SH);
+  spill.position.copy(head.localToWorld(new THREE.Vector3(0, 0, 0.05))); scene.add(spill); spill.lookAt(head.localToWorld(new THREE.Vector3(0, 0, 2)));
+  staticRects.push({ light: spill, power: 0.7 });
+  KIOSK.world = head.localToWorld(new THREE.Vector3(0, 0, 0));
+  KIOSK.front = k.localToWorld(new THREE.Vector3(0, 0, 1)).sub(k.position).setY(0).normalize();
+}
 
 function buildInterlude(it, idx) {
   const Y = new THREE.Vector3(0, 1, 0), fr = HALL_FRAMES[it.hall];
@@ -2064,6 +2402,7 @@ if (last) {
   WALL_LINES.forEach(buildWallLine);
   /* optional: if the projector fails on some device, the museum still opens without it */
   try { buildProjector(); } catch (e) { console.warn("projector skipped:", e); }
+  try { buildKiosk(); } catch (e) { console.warn("kiosk skipped:", e); }
   /* exit sign over the way back to the entrance, on the Hall I side of the foyer door */
   { const ex = exitSign(); ex.position.set(0.04, 3.85, (ENTRY.door0 + ENTRY.door1) / 2); ex.rotation.y = Math.PI / 2; scene.add(ex); }
   [ROT_A, ROT_B].forEach(c => { const det = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.062, 0.032, 24), detectorMat); det.position.set(c.x, CEIL - 0.016, c.z); scene.add(det); });
@@ -2215,6 +2554,11 @@ INTERLUDES.forEach((it, idx) => {
   const n = it.photos.length, STAND0 = THREE.MathUtils.clamp((n * (n > 3 ? 2.4 : 2.6) + 0.8) / 1.6, 5.0, 8.0), STAND = innerWidth < innerHeight && n > 1 ? Math.min(9.3, STAND0 * 1.8) : STAND0;
   stops.push({ kind: "inter", inter: idx, hall: hi, bay: w.index, pos: wallPoint(w, it.at - BAY * (w.inHall + 0.5), EYE, DEPTH - STAND), yaw: yawFacing(w.normal.clone()), pitch: Math.atan2(2.45 - EYE, STAND) });
 });
+      /* the kiosk in Hall III, after Growth: stand in front of it, looking down at the tilted screen */
+      if (hi === KIOSK.hall && w.inHall === 2 && KIOSK.world) {
+        const kd = innerWidth < innerHeight ? 3.9 : 3.1, at = KIOSK.world.clone().addScaledVector(KIOSK.front, kd).setY(EYE);
+        stops.push({ kind: "kiosk", hall: hi, bay: w.index, pos: at, yaw: Math.atan2(KIOSK.front.x, KIOSK.front.z), pitch: Math.atan2(KIOSK.world.y + 0.35 - EYE, kd) });   /* the screen and the line above it in one view */
+      }
     });
   });
   /* inside the dark room, facing the closing words (hall-local x is world -x in Hall III) */
@@ -2373,6 +2717,8 @@ function buildTour() {
     if (is >= 0) tour.steps.push({ stop: is, c, kind: "inter", note: CURATOR.inter[w.hall] || "" });
     const vs = stops.findIndex(st => st.kind === "video" && st.bay === c);
     if (vs >= 0) tour.steps.push({ stop: vs, kind: "video", note: PROJ.note });
+    const ks = stops.findIndex(st => st.kind === "kiosk" && st.bay === c);
+    if (ks >= 0) tour.steps.push({ stop: ks, kind: "kiosk", note: "A touchscreen: a body that keeps training and one that does not, from 20 to 80. Open it and move the slider." });
   });
   tour.steps.push({ stop: LAST(), kind: "exit", note: CURATOR.exit });
 }
@@ -2395,6 +2741,7 @@ function updateTourBar() {
   else if (st.kind === "rotunda") where = `Hall ${HALLS[st.hall].id} · <b>${esc(HALLS[st.hall].name)}</b>`;
   else if (st.kind === "exit") where = `<b>End of the visit</b>`;
   else if (st.kind === "video") where = `${esc(HALLS[0].name)} · <b>${esc(PROJ.title)}</b> · on the screen`;
+  else if (st.kind === "kiosk") where = `${esc(HALLS[2].name)} · <b>The long run</b> · on the screen`;
   else {
     const w = walls[st.c], lab = PAIR_LABELS[w.name];
     const part = st.kind === "text" ? "the text" : st.kind === "works" ? "the lead work" : st.kind === "work" ? `work ${st.n} of ${st.of}` : st.kind === "pair" ? (lab ? lab.join(" → ").toLowerCase() : "then and now") : st.kind === "context" ? st.era.toLowerCase() : "between the collections";
@@ -2407,8 +2754,8 @@ function updateTourBar() {
   else noteEl.textContent = st.note || "";
   tourBack.disabled = tour.i === 0;
   const readBtn = document.getElementById("tourRead");
-  readBtn.hidden = !(st.kind === "text" || st.kind === "about" || st.kind === "work");
-  readBtn.textContent = st.kind === "work" ? "See it large" : "Read the text";
+  readBtn.hidden = !(st.kind === "text" || st.kind === "about" || st.kind === "work" || st.kind === "kiosk");
+  readBtn.textContent = st.kind === "work" ? "See it large" : st.kind === "kiosk" ? "Open the screen" : "Read the text";
   tourNext.textContent = last ? "Finish the tour" : "Continue →";
 }
 function startTour() {
@@ -2430,7 +2777,7 @@ tourNext.addEventListener("click", tourNextStep);
 tourBack.addEventListener("click", () => tourGo(tour.i - 1));
 document.getElementById("tourLeave").addEventListener("click", leaveTour);
 /* the wall text, set large in the side panel, for anyone who would rather read it close up */
-document.getElementById("tourRead").addEventListener("click", () => { const st = tour.steps[tour.i]; if (st.kind === "about") openAbout(); else if (st.kind === "work") focusPhoto(st.c, st.k); else if (st.c !== undefined) openText(st.c); });
+document.getElementById("tourRead").addEventListener("click", () => { const st = tour.steps[tour.i]; if (st.kind === "about") openAbout(); else if (st.kind === "kiosk") openKiosk(); else if (st.kind === "work") focusPhoto(st.c, st.k); else if (st.c !== undefined) openText(st.c); });
 /* switching from the free visit to the guided tour at any time: it picks up at the stop nearest to the visitor */
 document.getElementById("tourTop").addEventListener("click", () => {
   if (!document.body.classList.contains("inside")) return;
@@ -2508,11 +2855,32 @@ renderer.domElement.addEventListener("wheel", e => {
   vel.x += fx * push; vel.z += fz * push;
   const sp = Math.hypot(vel.x, vel.z); if (sp > 4) { vel.x *= 4 / sp; vel.z *= 4 / sp; }
 }, { passive: false });
+/* the kiosk screen in the hall can be touched: a press on its slider drags the age instead of turning the view */
+let kioskDrag = null;
+const kPlane = new THREE.Plane(), kPt = new THREE.Vector3(), kN = new THREE.Vector3();
+function kioskPlaneUV(e) {
+  if (!KIOSK.screen) return null;
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera);
+  KIOSK.screen.updateMatrixWorld(); kN.set(0, 0, 1).transformDirection(KIOSK.screen.matrixWorld);
+  kPlane.setFromNormalAndCoplanarPoint(kN, KIOSK.screen.getWorldPosition(kPt));
+  if (!ray.ray.intersectPlane(kPlane, kPt)) return null;
+  KIOSK.screen.worldToLocal(kPt);
+  return { x: kPt.x / KIOSK.sw + 0.5, y: kPt.y / KIOSK.sh + 0.5 };
+}
 renderer.domElement.addEventListener("pointerdown", e => {
+  if (document.body.classList.contains("inside") && KIOSK.screen) {
+    const hit = pick(e);
+    if (hit && hit.object.userData.type === "kiosk") {
+      const uv = kioskPlaneUV(e);
+      if (uv && kioskOnSlider(kioskUV(uv))) { kioskDrag = e.pointerId; renderer.domElement.setPointerCapture(e.pointerId); kioskSetAgeFromPoint(kioskUV(uv)); hideHint(); return; }
+    }
+  }
   down = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY }; dragged = false;
   renderer.domElement.setPointerCapture(e.pointerId);
 });
 renderer.domElement.addEventListener("pointermove", e => {
+  if (kioskDrag !== null) { const uv = kioskPlaneUV(e); if (uv) kioskSetAgeFromPoint(kioskUV(uv)); return; }
   if (down) {
     if (!dragged && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5 && document.body.classList.contains("inside")) { dragged = true; stage.classList.add("grab"); beginFree(); }
     if (dragged && mode === "free") {
@@ -2523,9 +2891,11 @@ renderer.domElement.addEventListener("pointermove", e => {
     return;
   }
   const hit = pick(e), type = hit && hit.object.userData.type;
-  stage.classList.toggle("point", type === "photo" || type === "text" || type === "about" || type === "sources" || type === "context");
+  stage.classList.toggle("point", type === "photo" || type === "text" || type === "about" || type === "sources" || type === "context" || type === "kiosk");
 });
+renderer.domElement.addEventListener("pointercancel", () => { kioskDrag = null; });
 renderer.domElement.addEventListener("pointerup", e => {
+  if (kioskDrag !== null) { kioskDrag = null; return; }
   stage.classList.remove("grab");
   const wasDrag = dragged; down = null; dragged = false;
   if (wasDrag || !document.body.classList.contains("inside")) return;
@@ -2537,6 +2907,7 @@ renderer.domElement.addEventListener("pointerup", e => {
   else if (u.type === "about") { if (!tour.on) goToStop(1); openAbout(); }
   else if (u.type === "sources") openSources();
   else if (u.type === "context") openContext(walls[u.wall].photos[u.photo]);
+  else if (u.type === "kiosk") openKiosk();
 });
 
 /* ---------------- UI ---------------- */
@@ -2585,9 +2956,12 @@ function updateUI() {
         [[`Enter the hall · ${h.items.length} collections →`, () => goToStop(si + 1)]]);
 } else if (s.kind === "inter") {
   const it = INTERLUDES[s.inter], nx = stops[si + 1];
-  const go = !nx ? "Exit →" : nx.kind === "rotunda" ? `Next hall: ${HALLS[nx.hall].name} →` : nx.kind === "exit" ? "To the exit →" : `Next: ${walls[nx.wall].name} →`;
+  const go = !nx ? "Exit →" : nx.kind === "rotunda" ? `Next hall: ${HALLS[nx.hall].name} →` : nx.kind === "exit" ? "To the exit →" : nx.kind === "kiosk" ? "Next: the screen →" : nx.kind === "video" ? "Next: the screen →" : `Next: ${walls[nx.wall].name} →`;
   if (it.pairOf) setCaption(`${hallLabel(s.hall)} · ${esc(it.pairOf)}`, esc((PAIR_LABELS[it.pairOf] || ["Then", "now"]).join(" → ")), [[go, () => { closePanel(); goToStop(si + 1); }]]);
   else setCaption(`${hallLabel(s.hall)} · between the collections`, `${it.photos.length} more work${it.photos.length === 1 ? "" : "s"}`, [[go, () => { closePanel(); goToStop(si + 1); }]]);
+    } else if (s.kind === "kiosk") {
+      const nx = stops[si + 1];
+      setCaption(`${hallLabel(s.hall)} · interactive`, "The long run", [["Open the screen", openKiosk], [nx && nx.kind === "exit" ? "To the exit →" : "Continue →", () => { closePanel(); goToStop(si + 1); }]]);
     } else if (s.kind === "video") {
       const nx = stops[si + 1];
       setCaption(`${hallLabel(s.hall)} · on the screen`, esc(PROJ.title), [[nx && nx.kind === "rotunda" ? `Next hall: ${HALLS[nx.hall].name} →` : nx && nx.wall !== undefined ? `Next: ${walls[nx.wall].name} →` : "Continue →", () => { closePanel(); goToStop(si + 1); }]]);
@@ -2722,6 +3096,7 @@ addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
 addEventListener("blur", () => keys.clear());
 addEventListener("keydown", e => {
   if (!document.body.classList.contains("inside")) return;
+  if (!kioskEl.hidden) { if (e.key === "Escape") closeKiosk(); return; }   /* the slider takes the arrow keys while the screen is open */
   if (!lb.hidden) {
     if (e.key === "Escape") closeLightbox();
     else if (e.key === "ArrowLeft" && lbAt && lbAt.k > 0) openWork(lbAt.photos, lbAt.k - 1, lbAt.label);
